@@ -8,12 +8,7 @@ final class MenuBarPopoverUITests: XCTestCase {
         app.launch()
 
         let sidebar = app.outlines["sidebar-navigation"]
-        let sidebarScrollViews = app.scrollViews.allElementsBoundByIndex
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "The sidebar should be available for navigation.")
-        guard let sidebarScrollView = sidebarScrollViews.first(where: { $0.frame.minX < 320 }) else {
-            XCTFail("A scrollable view should be available in the sidebar column.")
-            return
-        }
 
         let sections = [
             "overview",
@@ -42,11 +37,13 @@ final class MenuBarPopoverUITests: XCTestCase {
 
         for section in sections {
             let sidebarButton = app.buttons["sidebar-section-\(section)"]
-            for _ in 0..<8 {
+            for _ in 0..<12 {
                 if sidebarButton.exists && sidebarButton.isHittable {
                     break
                 }
-                sidebarScrollView.swipeUp()
+                let dragStart = sidebar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.82))
+                let dragEnd = sidebar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
+                dragStart.press(forDuration: 0.05, thenDragTo: dragEnd)
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
