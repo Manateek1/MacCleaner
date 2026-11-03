@@ -130,7 +130,7 @@ favorite remains in the shortcuts after navigating away and back.
 The XCTest suite uses Xcode's test runner. The GitHub Actions workflow runs it
 on a macOS runner.
 
-On Nov 2, 2026, the 0.5.2 build 103 suite passed 318 tests with 0 failures and
+On Nov 2, 2026, the 0.5.3 build 104 suite passed 321 tests with 0 failures and
 0 skips on macOS Tahoe 26.6.2 arm64. This includes a UI test that clicks the
 Mac Cleaner menu bar icon and verifies the System Monitor panel visibly shows
 CPU and storage cards. The twenty-three standalone core checks, including the

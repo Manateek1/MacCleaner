@@ -1,7 +1,7 @@
 # Feature status
 
-Mac Cleaner 0.5.2 builds on the first usable local-only beta (0.4.0). The
-features below run in the app; they are not navigation placeholders. The suite
+Mac Cleaner 0.5.3 build 104 builds on the first usable local-only beta
+(0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
 release-quality checks are listed below. Cloud storage, email, Chrome
