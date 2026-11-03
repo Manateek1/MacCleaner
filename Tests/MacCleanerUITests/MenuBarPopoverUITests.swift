@@ -41,9 +41,7 @@ final class MenuBarPopoverUITests: XCTestCase {
                 if sidebarButton.exists && sidebarButton.isHittable {
                     break
                 }
-                let dragStart = sidebar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.82))
-                let dragEnd = sidebar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
-                dragStart.press(forDuration: 0.05, thenDragTo: dragEnd)
+                sidebar.scroll(byDeltaX: 0, deltaY: 480)
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
