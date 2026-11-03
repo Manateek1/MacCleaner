@@ -73,10 +73,12 @@ exclusions, sensitive names, incomplete and capped inventories, the required
 Finder-review acknowledgement, selected-only moves to a disposable fixture
 Trash, and changed match anchors being rejected.
 Disk-scan tests cover Desktop/Documents/Downloads and accessible locations
-outside the account, read-only findings from other local accounts, exclusion
-of account Library data, streamed directory progress, partial results at the
-entry limit, saved first-run notice state, and local full-disk review storage
-round-trips, private file permissions, scope validation, and clearing.
+outside the account, read-only findings from other local accounts, current
+account Library metadata with safe cleanup restrictions, exclusion of
+protected app-state, developer toolchains, and other-account Library data,
+streamed directory progress, partial results at the entry limit, saved
+first-run notice state, and local full-disk review storage round-trips, private
+file permissions, scope validation, and clearing.
 Scan-view-model coverage verifies that a saved review can be restored when the
 disk bookmark is absent while cleanup selection remains unavailable.
 Partial-result tests verify the files-and-folders cap,
@@ -130,13 +132,16 @@ favorite remains in the shortcuts after navigating away and back.
 The XCTest suite uses Xcode's test runner. The GitHub Actions workflow runs it
 on a macOS runner.
 
-On Nov 2, 2026, the 0.5.3 build 104 suite passed 321 tests with 0 failures and
-0 skips on macOS Tahoe 26.6.2 arm64. This includes a UI test that clicks the
-Mac Cleaner menu bar icon and verifies the System Monitor panel visibly shows
-CPU and storage cards. The twenty-three standalone core checks, including the
-10,000-file stress scan, passed. GitHub Actions now runs the release gate on the
-Apple silicon macOS 26 runner; Intel and earlier macOS versions are out of scope.
-The arm64 Tahoe Release build and static analyzer also pass locally.
+On Nov 2, 2026, Mac Cleaner 0.5.4 build 106 passed all 323 XCTest unit tests
+with 0 failures on macOS Tahoe 26.6.2 arm64. All 23 standalone core checks also
+passed, including the 10,000-file stress scan (5.73 seconds while another
+whole-Mac scan was running). The arm64 Release
+build and Xcode static analyzer passed locally. A separate local menu-bar UI
+test could not initialize because Xcode timed out while enabling automation
+mode, so its UI actions did not run on this host. The earlier 0.5.3 menu-bar UI
+test passed in CI; CI for the current change must run before release. GitHub
+Actions runs the release gate on Apple silicon macOS 26; Intel and earlier
+macOS versions are out of scope.
 
 ## Manual checks performed
 

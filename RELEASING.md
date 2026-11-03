@@ -34,8 +34,8 @@ changes.
 
 1. Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `Project.yml`.
 2. Merge the change to `main` after its macOS checks pass.
-3. Create and push a matching version tag, such as `v0.5.3` for app version
-   `0.5.3`.
+3. Create and push a matching version tag, such as `v0.5.4` for app version
+   `0.5.4`.
 4. In **Actions → Signed macOS release**, run the workflow from `main` and enter
    that tag. The build job checks that the tag points to a commit on `main`, then
    runs core checks, unit and UI tests, and an unsigned Tahoe/Apple silicon

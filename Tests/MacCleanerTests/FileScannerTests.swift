@@ -107,6 +107,44 @@ final class FileScannerTests: XCTestCase {
         try FileManager.default.createDirectory(at: nested.appendingPathComponent(".git"), withIntermediateDirectories: false)
         guard case .protected = SafeFilePolicy.assess(item, inside: folder) else { return XCTFail("New repository must be protected") }
     }
+
+    func testDeveloperToolchainDirectoriesAreExcludedAndCannotBeCleaned() throws {
+        let disk = try temporaryFolder()
+        let home = disk.appendingPathComponent("Users/tester", isDirectory: true)
+        let toolchainPaths = [
+            home.appendingPathComponent(".rustup/toolchains/stable/lib/rustc_driver.dylib"),
+            home.appendingPathComponent(".cargo/registry/src/example/package/lib.rs"),
+            home.appendingPathComponent(".nvm/versions/node/v22/bin/node"),
+            home.appendingPathComponent(".pyenv/versions/3.13/bin/python3"),
+            home.appendingPathComponent(".sdkman/candidates/java/current/bin/java"),
+            home.appendingPathComponent(".conda/envs/project/bin/python")
+        ]
+
+        for url in toolchainPaths {
+            XCTAssertTrue(SafeFilePolicy.containsProtectedPathComponent(url.path), "Expected \(url.path) to be protected")
+            XCTAssertTrue(SafeFilePolicy.shouldSkipDirectory(url.deletingLastPathComponent().path, homeDirectory: home))
+
+            let item = ScanItem(
+                path: url.path,
+                identity: FileIdentity(device: 1, inode: 1, size: 1, modifiedAt: 1, linkCount: 1),
+                lastAccessedAt: nil,
+                isCloudManaged: nil,
+                categories: [.exactDuplicate],
+                reasons: ["Exact duplicate"],
+                safetyNote: "Review before deciding.",
+                confidence: 1,
+                duplicateGroupID: "duplicate-group",
+                duplicateGroupCount: 2,
+                suggestedKeepPath: nil,
+                cacheReviewDetails: nil
+            )
+            guard case .protected = SafeFilePolicy.assess(item, inside: disk, homeDirectory: home) else {
+                XCTFail("Developer toolchain files must not be eligible for cleanup: \(url.path)")
+                continue
+            }
+        }
+    }
+
     func testFindsByteExactDuplicatesAndKeepsOneSuggestedCopy() async throws {
         let folder = try temporaryFolder()
         try Data("same bytes".utf8).write(to: folder.appendingPathComponent("first.txt"))
@@ -339,6 +377,52 @@ final class FileScannerTests: XCTestCase {
         XCTAssertTrue(reason.localizedCaseInsensitiveContains("view-only"))
         XCTAssertTrue(progress.values.contains { $0.entriesVisited > 0 }, "Progress should report directory entries before the scan has finished.")
         XCTAssertNil(result.removingItems(at: Set([try XCTUnwrap(result.items.first).path])).space)
+    }
+
+    func testDiskScanIncludesCurrentAccountLibraryAndKeepsAppDataReadOnly() async throws {
+        let disk = try temporaryFolder().resolvingSymlinksInPath()
+        let home = disk.appendingPathComponent("Users/tester", isDirectory: true)
+        let libraryLargeFile = home.appendingPathComponent("Library/Developer/OtherTool/artifact.bin")
+        let libraryCacheFile = home.appendingPathComponent("Library/Caches/Example/library-cache.bin")
+        let appSupportFile = home.appendingPathComponent("Library/Application Support/Example/private-state.db")
+        let otherAccountCache = disk.appendingPathComponent("Users/other/Library/Caches/Example/private-cache.bin")
+        for file in [libraryLargeFile, libraryCacheFile, appSupportFile, otherAccountCache] {
+            try FileManager.default.createDirectory(
+                at: file.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+        }
+        try Data(repeating: 1, count: 32).write(to: libraryLargeFile)
+        try Data(repeating: 2, count: 16).write(to: libraryCacheFile)
+        try Data(repeating: 3, count: 24).write(to: appSupportFile)
+        try Data(repeating: 4, count: 8).write(to: otherAccountCache)
+
+        let request = ScanRequest(
+            root: disk,
+            kind: .smart,
+            minimumFileSizeBytes: 1,
+            oldFileAgeDays: 365,
+            scanEntireDisk: true
+        )
+        let result = try await FileScanner(accountHome: home, maximumEntries: 1_000).scan(request, progress: { _ in })
+        let libraryItem = try XCTUnwrap(result.items.first { $0.path == libraryLargeFile.path })
+        let cacheItem = try XCTUnwrap(result.items.first { $0.path == libraryCacheFile.path })
+
+        XCTAssertTrue(libraryItem.safetyNote.hasPrefix("Read-only:"))
+        guard case .protected(let libraryReason) = SafeFilePolicy.assess(
+            libraryItem,
+            inside: disk,
+            homeDirectory: home
+        ) else {
+            return XCTFail("Ordinary files in the current account Library must stay read-only.")
+        }
+        XCTAssertTrue(libraryReason.localizedCaseInsensitiveContains("read-only"))
+        XCTAssertTrue(cacheItem.categories.contains(.cacheCandidate))
+        guard case .allowed = SafeFilePolicy.assess(cacheItem, inside: disk, homeDirectory: home) else {
+            return XCTFail("A recognized cache can remain reviewable in the current account Library.")
+        }
+        XCTAssertFalse(result.items.contains { $0.path == appSupportFile.path }, "Application Support data must remain excluded.")
+        XCTAssertFalse(result.items.contains { $0.path == otherAccountCache.path }, "Other account Library data must remain excluded.")
     }
 
     func testDiskScanIncludesAccessibleMountedExternalVolumesAndSkipsICloudVolumes() async throws {

@@ -24,13 +24,17 @@ the repository includes source and instructions for building it locally.
 - A guided first-run setup explains local file access and offers optional
   Photos access. After Full Disk Access is enabled once in System Settings,
   Smart Scan opens the whole-Mac scan directly without a folder picker.
-- Smart Scan includes the signed-in account, accessible folders in other local
-  accounts, shared files, selected cache/log folders, accessible non-user areas
-  of the system disk, and connected local external drives. Other accounts are
-  read-only in Mac Cleaner. If Desktop is in iCloud Drive, local file metadata
-  appears as read-only results; cloud-only files are not downloaded, and
-  content-based checks skip iCloud items. It skips other iCloud Drive areas,
-  network volumes, protected system folders, and account Library data, with
+- Smart Scan includes the signed-in account, including accessible Library
+  metadata, accessible folders in other local accounts, shared files, selected
+  system cache/log folders, accessible non-user areas of the system disk, and
+  connected local external drives. Ordinary files in the signed-in account's
+  Library remain read-only; only recognized cache/log candidates are offered
+  for review. Other accounts' Library data, protected app-state folders, and
+  developer toolchain folders are skipped; other-account results remain
+  read-only. If Desktop is in iCloud
+  Drive, local file metadata appears as read-only results; cloud-only files are
+  not downloaded, and content-based checks skip iCloud items. Other iCloud
+  Drive areas, network volumes, and protected system folders are skipped, with
   visible folder and file progress. Specific-folder scans remain available.
   The latest full-disk
   findings are saved locally with names and paths so a review survives restart;

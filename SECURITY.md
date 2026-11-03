@@ -44,10 +44,14 @@ savings. Scans are read-only; cleanup is a separate, reviewable action.
   Directory enumeration rejects opened paths that resolve differently from
   the expected path.
 - The full-disk scan covers accessible locations and reports unreadable paths
-  and partial results. It skips broad account Library data, protected system
-  areas, network volumes, and iCloud content except locally stored Desktop
-  metadata. Dedicated tools inspect only their documented cache, model,
-  backup, report, app-support, Photos, and Xcode locations.
+  and partial results. It reads metadata in the signed-in account's Library,
+  but ordinary app data remains view-only; only recognized cache/log
+  candidates may be moved to Trash after review. Protected app-state and
+  developer toolchain folders, other accounts' Library data, protected system
+  areas, network volumes, and iCloud content are skipped except locally stored
+  Desktop metadata. Dedicated
+  tools inspect only their documented model, backup, report, app-support,
+  Photos, and Xcode locations.
 - Other local accounts and system-wide cache/log results are view-only.
   System-wide caches are not offered for cleanup.
 - Selected files are rechecked before the Trash operation for their location,

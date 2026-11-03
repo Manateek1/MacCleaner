@@ -1,6 +1,6 @@
 # Feature status
 
-Mac Cleaner 0.5.3 build 104 builds on the first usable local-only beta
+Mac Cleaner 0.5.4 build 106 builds on the first usable local-only beta
 (0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
@@ -32,17 +32,20 @@ extensions, and browser messaging are outside the requested scope.
 - Full-disk traversal streams directory entries, reports location and file
   progress, limits waits for folders that do not open promptly, checks
   cancellation while walking, and caps the total locations inspected. It scans
-  the signed-in account and accessible local account folders outside their
-  Library directories. Other accounts are view-only and cannot be moved to
-  Trash from the signed-in account. It also scans `/Users/Shared`, selected
-  cache/log folders, accessible non-user areas on the system disk, and
+  the signed-in account, including accessible Library metadata, and accessible
+  local account folders outside their Library directories. Ordinary files in
+  the signed-in account's Library stay view-only; only recognized cache/log
+  candidates can be moved to Trash after review. Other accounts' Library data
+  is skipped; their other accessible files are view-only. It also scans
+  `/Users/Shared`, selected system cache/log folders, accessible non-user areas on the system disk, and
   connected, mounted local external volumes when accessible. If the Desktop
   is iCloud-backed, it reads metadata only for files already stored locally and
   marks their results read-only. It reports how many local Desktop files it
   checked and skips cloud-only or downloading items without downloading them.
   Exact duplicate hashing and Similar Photos skip
   iCloud items. Other iCloud Drive areas, network volumes, protected system
-  folders, and account Library data are skipped.
+  folders, other accounts' Library data, protected app-state folders, and
+  developer toolchain folders are skipped.
   Unreadable locations are counted in the scan results. The result shows
   how many files and folders were checked, names up to five inaccessible paths,
   and counts any paths omitted from the concise summary. Reaching the safety cap
@@ -308,12 +311,15 @@ extensions, and browser messaging are outside the requested scope.
   the UI displays up to five examples while retaining the full inaccessible
   location count.
 - Disk scans prioritize the current account, other accessible local account
-  folders, selected cache/log folders, and accessible top-level system-disk
-  locations. Findings from other accounts remain view-only. The scan skips
-  account Library data, network volumes, cloud-only iCloud items and other
-  iCloud Drive areas, plus protected system areas. Locally stored iCloud
-  Desktop metadata is the read-only exception. macOS can deny additional
-  locations; errors are counted and shown.
+  folders, selected system cache/log folders, and accessible top-level
+  system-disk locations. The current account's Library is scanned for
+  metadata, but ordinary app data remains view-only; only recognized
+  cache/log candidates can be moved to Trash. Other accounts' Library data,
+  protected app-state folders, network volumes, cloud-only iCloud items and
+  other iCloud Drive areas, plus protected system areas are skipped. Other
+  account findings remain view-only. Locally stored iCloud Desktop metadata is
+  the read-only exception. macOS can deny additional locations; errors are
+  counted and shown.
 - User exclusions skip an exact folder and its descendants in future scans.
   A selected custom-folder scan inside an excluded location is blocked with a
   Settings link in its explanation. Exclusions do not rescan or alter a review
