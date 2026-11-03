@@ -4,17 +4,16 @@ final class MenuBarPopoverUITests: XCTestCase {
     @MainActor
     func testSidebarNavigationOpensEveryPrimarySection() {
         let app = XCUIApplication(bundleIdentifier: "com.manateek1.MacCleaner")
+        app.launchArguments += ["-MacCleaner.scanNoticeAcceptedVersion", "4"]
         app.launch()
 
-        let dismissSetup = app.buttons["Not Now"]
-        if dismissSetup.waitForExistence(timeout: 3) {
-            dismissSetup.click()
-        }
-
-        let sidebar = app.descendants(matching: .any)
-            .matching(identifier: "sidebar-navigation")
-            .firstMatch
+        let sidebar = app.outlines["sidebar-navigation"]
+        let sidebarScrollViews = app.scrollViews.allElementsBoundByIndex
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "The sidebar should be available for navigation.")
+        guard let sidebarScrollView = sidebarScrollViews.first(where: { $0.frame.minX < 320 }) else {
+            XCTFail("A scrollable view should be available in the sidebar column.")
+            return
+        }
 
         let sections = [
             "overview",
@@ -47,7 +46,7 @@ final class MenuBarPopoverUITests: XCTestCase {
                 if sidebarButton.exists && sidebarButton.isHittable {
                     break
                 }
-                sidebar.swipeUp()
+                sidebarScrollView.swipeUp()
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
