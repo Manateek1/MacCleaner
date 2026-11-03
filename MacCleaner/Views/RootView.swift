@@ -171,6 +171,7 @@ struct RootView: View {
                 }
             }
             .listStyle(.sidebar)
+            .accessibilityIdentifier("sidebar-navigation")
             .navigationSplitViewColumnWidth(min: 210, ideal: 236, max: 300)
         } detail: {
             Group {
@@ -252,6 +253,8 @@ struct RootView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(MacCleanerTheme.canvas)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("section-content-\((navigation.selectedSection ?? .overview).rawValue)")
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -307,6 +310,7 @@ struct RootView: View {
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
         .listRowBackground(Color.clear)
+        .accessibilityIdentifier("sidebar-section-\(item.rawValue)")
     }
 }
 

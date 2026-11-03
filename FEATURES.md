@@ -414,15 +414,20 @@ extensions, and browser messaging are outside the requested scope.
   file-modified date, not a verified backup completion time. Expected metadata
   does not prove that a backup can restore a device. Sizes are logical sums and
   may not equal space reclaimed when storage is shared or cloned.
-- No signed public release has been published yet. Until one is available,
-  local builds are for development and testing.
+- GitHub can publish a tested Apple silicon developer-preview ZIP as a marked
+  prerelease. The app is ad-hoc signed, with no Apple Developer ID signature or
+  notarization, so Gatekeeper may warn about or prevent opening it. A notarized
+  release is not available yet; local builds are also for development and
+  testing.
 - To use Full Disk Access for a whole-Mac scan, this build is not restricted by
   App Sandbox. While Full Disk Access is enabled, Mac Cleaner can read protected
   local files outside its app folder. Scans remain read-only; cleanup still
   requires selection and confirmation. macOS can continue to block some areas,
   which are reported as skipped. Full Disk Access can be turned off in System
-  Settings. Local development builds use an ad-hoc signature. A public build
-  must pass the signing and notarization workflow before publication.
+  Settings. Local development builds and the marked preview use an ad-hoc
+  signature. The preview does not pass Gatekeeper's Developer ID and
+  notarization checks; a frictionless public release still requires those
+  checks.
 - Application sizes exclude symlinks and shared support data, may be partial,
   and are not a measure of space that can definitely be recovered. Inventory
   is limited to accessible standard Applications folders.
@@ -541,10 +546,14 @@ extensions, and browser messaging are outside the requested scope.
 - Independent feature-level accessibility and keyboard-navigation review,
   broader light/dark and resizing coverage, and live large-tree/performance
   runs on Tahoe 26+ Apple silicon remain future QA.
-- The release workflow builds and tests an arm64 app on macOS 26, signs it with a
-  Developer ID certificate, submits it to Apple notarization, staples the
-  ticket, and attaches the verified ZIP and checksum to GitHub Releases. It
-  requires maintainer-owned signing credentials in GitHub Actions secrets.
-- Local development builds remain ad-hoc signed and are not suitable as
-  frictionless downloads. Public releases are not published until signing and
-  notarization complete successfully.
+- The developer-preview workflow builds and tests an arm64 app on macOS 26,
+  ad-hoc signs the app bundle, and publishes a checksum-verified GitHub
+  prerelease without Apple credentials. The app is not Developer ID signed or
+  notarized, and Gatekeeper may block it.
+- The separate signed release workflow signs with a Developer ID certificate,
+  submits the app to Apple notarization, staples the ticket, and attaches the
+  verified ZIP and checksum to GitHub Releases. It requires maintainer-owned
+  signing credentials in GitHub Actions secrets.
+- The ad-hoc signed preview is a developer download, not a frictionless install.
+  Frictionless distribution remains unfinished until signing and notarization
+  are configured.

@@ -2,6 +2,63 @@ import XCTest
 
 final class MenuBarPopoverUITests: XCTestCase {
     @MainActor
+    func testSidebarNavigationOpensEveryPrimarySection() {
+        let app = XCUIApplication(bundleIdentifier: "com.manateek1.MacCleaner")
+        app.launch()
+
+        let dismissSetup = app.buttons["Not Now"]
+        if dismissSetup.waitForExistence(timeout: 3) {
+            dismissSetup.click()
+        }
+
+        let sidebar = app.scrollViews["sidebar-navigation"]
+        XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "The sidebar should be available for navigation.")
+
+        let sections = [
+            "overview",
+            "smartScan",
+            "largeFiles",
+            "duplicates",
+            "similarPhotos",
+            "junk",
+            "aiClutter",
+            "localModels",
+            "privacyCleanup",
+            "spaceLens",
+            "deviceBackups",
+            "performance",
+            "maintenance",
+            "applications",
+            "appUpdates",
+            "appSecurity",
+            "appLeftovers",
+            "startup",
+            "tools",
+            "permissions",
+            "activity",
+            "settings"
+        ]
+
+        for section in sections {
+            let sidebarButton = app.buttons["sidebar-section-\(section)"]
+            for _ in 0..<8 {
+                if sidebarButton.exists && sidebarButton.isHittable {
+                    break
+                }
+                sidebar.swipeUp()
+            }
+            XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
+            XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
+            sidebarButton.click()
+
+            let content = app.descendants(matching: .any)
+                .matching(identifier: "section-content-\(section)")
+                .firstMatch
+            XCTAssertTrue(content.waitForExistence(timeout: 5), "The \(section) screen should open.")
+        }
+    }
+
+    @MainActor
     func testStatusItemOpensVisibleSystemMonitorPanel() {
         let app = XCUIApplication(bundleIdentifier: "com.manateek1.MacCleaner")
         app.launch()
