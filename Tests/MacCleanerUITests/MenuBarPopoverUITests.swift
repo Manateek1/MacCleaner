@@ -11,7 +11,9 @@ final class MenuBarPopoverUITests: XCTestCase {
             dismissSetup.click()
         }
 
-        let sidebar = app.scrollViews["sidebar-navigation"]
+        let sidebar = app.descendants(matching: .any)
+            .matching(identifier: "sidebar-navigation")
+            .firstMatch
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "The sidebar should be available for navigation.")
 
         let sections = [
