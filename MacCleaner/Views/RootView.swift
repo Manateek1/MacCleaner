@@ -346,7 +346,7 @@ struct SetupGuideView: View {
                 Label("Full Disk Access lets Mac Cleaner check local folders across your Mac for large files, exact duplicates, and recognized temporary files. The scan is read-only.", systemImage: "doc.text.magnifyingglass")
                 Label("This version is not confined to its own app folder so it can use Full Disk Access. It can read protected local files while that permission is on; the scan itself does not change them.", systemImage: "lock.shield")
                 Label("Nothing moves until you select files and confirm. Cleanup moves selected items to Trash.", systemImage: "checkmark.shield")
-                Label("macOS controls access. Accessible folders in other local accounts are checked read-only. Local iCloud Desktop files can appear as read-only results; cloud-only files are not downloaded, and iCloud items are skipped by content-based checks. Other iCloud Drive areas, network drives, protected system areas, and account Library data are skipped. Connected local external drives are included when accessible.", systemImage: "lock.shield")
+                Label("macOS controls access. Your account Library is checked for file sizes and known caches; app data stays read-only. Other local accounts are checked read-only outside their Library. Local iCloud Desktop files can appear as read-only results; cloud-only files are not downloaded. Other iCloud Drive areas, network drives, protected system areas, and other accounts' Library data are skipped. Connected local external drives are included when accessible.", systemImage: "lock.shield")
                 Label("If Desktop is stored in iCloud, macOS may ask you to choose Desktop once so Mac Cleaner can read local copies. This access is saved when macOS allows it and can be forgotten in Settings.", systemImage: "icloud")
                 Label("The latest full-disk review is saved on this Mac so it can be reopened after a restart. It includes file names and paths, stays local, and can be cleared in Settings.", systemImage: "externaldrive.badge.timemachine")
             }
@@ -783,7 +783,7 @@ struct ScanWorkspaceView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     if result.rootPath == "/" {
-                        Text("Desktop, Documents, Downloads, shared files, selected cache and log folders, accessible local account folders, and connected external drives are included when accessible. iCloud Desktop files already stored on this Mac appear as read-only results; Mac Cleaner does not download cloud-only files, hash iCloud items for duplicate matching, or move iCloud items to Trash. Other iCloud Drive areas, network drives, protected system areas, app-private data, and folders you excluded in Settings are skipped. Other accounts and system-wide cache and log files are view-only; older reports in your account's standard DiagnosticReports folder have a separate review.")
+                        Text("Desktop, Documents, Downloads, shared files, your account Library, accessible local account folders, selected system cache and log folders, and connected external drives are included when accessible. Normal app data in your Library is view-only; only recognized caches and logs can be reviewed for Trash. iCloud Desktop files already stored on this Mac appear as read-only results; Mac Cleaner does not download cloud-only files, hash iCloud items for duplicate matching, or move iCloud items to Trash. Other iCloud Drive areas, network drives, protected system areas, protected app data, and folders you excluded in Settings are skipped. Other account files and system-wide cache and log files are view-only; older reports in your account's standard DiagnosticReports folder have a separate review.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     if kind == .smart, result.rootPath == "/" {
@@ -1879,7 +1879,11 @@ private struct ScanResultList: View {
                 ? "System location — view only"
                 : (item.isCloudManaged == true
                     ? "iCloud Drive — view only"
-                    : (SafeFilePolicy.isOtherUserAccountPath(item.path) ? "Another account — view only" : nil)),
+                    : (SafeFilePolicy.isOtherUserAccountPath(item.path)
+                        ? "Another account — view only"
+                        : (SafeFilePolicy.isReadOnlyCurrentAccountLibraryItem(path: item.path, categories: item.categories)
+                            ? "App data — view only"
+                            : nil))),
             isDuplicateKeeper: keeperPath == item.path,
             isSuggestedKeeper: model.isSuggestedDuplicateKeeper(for: item),
             chooseAsKeeper: { model.chooseDuplicateKeeper(for: item) },

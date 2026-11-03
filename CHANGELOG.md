@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.4 - 2026-11-02
+
+- Include current-account Library metadata in whole-Mac scans so file sizes,
+  duplicates, and recognized cleanup candidates are visible in one review.
+- Keep ordinary Library app data view-only; recognized cache and log candidates
+  still require the same selection and Trash confirmation.
+- Continue skipping protected app-state folders and other accounts' Library data.
+- Protect Rustup, Cargo, Node, Python, Java, and Conda toolchain folders from
+  duplicate cleanup suggestions.
+
 ## 0.5.0 - 2026-11-02
 
 - Add a user-started Homebrew cask update check with local result history and

@@ -23,7 +23,8 @@ enum SafeFilePolicy {
         "memory", "models", "model", "weights", "auth", "tokens", ".trash", "trash",
         "cloudstorage", "mobile documents", "com.apple.clouddocs", "icloud drive",
         "dropbox", "onedrive", "google drive",
-        "node_modules", ".venv", "venv", ".build", ".swiftpm", ".gradle"
+        "node_modules", ".venv", "venv", ".build", ".swiftpm", ".gradle",
+        ".rustup", ".cargo", ".nvm", ".pyenv", ".sdkman", ".conda"
     ]
 
     private static let protectedFileExtensions: Set<String> = ["pem", "key", "p12", "pfx", "mobileprovision"]
@@ -91,6 +92,27 @@ enum SafeFilePolicy {
         let candidateAccount = candidateComponents[usersIndex + 1]
         return candidateAccount.caseInsensitiveCompare("Shared") != .orderedSame
             && candidateAccount.caseInsensitiveCompare(currentAccount) != .orderedSame
+    }
+
+    static func isInsideCurrentAccountLibrary(_ path: String, homeDirectory: URL = accountHome) -> Bool {
+        let libraryPath = homeDirectory.appendingPathComponent("Library", isDirectory: true).standardizedFileURL.path
+        let candidatePath = URL(fileURLWithPath: path).standardizedFileURL.path
+        return candidatePath == libraryPath || isInside(candidatePath, root: libraryPath)
+    }
+
+    static func isReadOnlyCurrentAccountLibraryItem(
+        path: String,
+        categories: [FindingCategory],
+        homeDirectory: URL = accountHome
+    ) -> Bool {
+        guard isInsideCurrentAccountLibrary(path, homeDirectory: homeDirectory) else { return false }
+        let supportedCategories: Set<FindingCategory> = [.largeFile, .oldFile, .cacheCandidate, .aiCacheCandidate]
+        guard !categories.isEmpty, categories.allSatisfy(supportedCategories.contains) else { return true }
+
+        let recognizedCache = categories.contains(.cacheCandidate)
+            && isCacheOrLogCandidate(path, homeDirectory: homeDirectory)
+        let recognizedAICache = categories.contains(.aiCacheCandidate) && isAIAppCacheCandidate(path)
+        return !recognizedCache && !recognizedAICache
     }
 
     static func shouldSkipDirectory(_ path: String, homeDirectory: URL = accountHome) -> Bool {
@@ -224,6 +246,13 @@ enum SafeFilePolicy {
         }
         guard !isEssentialSystemLocation(path) else { return .protected("Essential macOS locations cannot be cleaned.") }
         guard !containsProtectedPathComponent(path) else { return .protected("This path may contain credentials, personal history, or development data.") }
+        guard !isReadOnlyCurrentAccountLibraryItem(
+            path: path,
+            categories: item.categories,
+            homeDirectory: homeDirectory
+        ) else {
+            return .protected("App Library files can contain settings or state the app needs, so this item stays read-only.")
+        }
         guard !isInsideDevelopmentRepository(path) else { return .protected("Files inside development repositories are protected.") }
         guard hasNoSymlinkedParent(path: path, root: root) else { return .protected("The path contains a symbolic link or changed since scanning.") }
         guard let current = identity(at: path) else { return .protected("The item is no longer a regular file.") }

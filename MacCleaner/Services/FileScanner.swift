@@ -250,7 +250,7 @@ struct FileScanner: ScanServicing {
             accountHome: accountHome
         ) ? ICloudDesktopPolicy.iCloudDesktopRoot(accountHome: accountHome) : nil
         let scanRoots: [URL]
-        var userLibraryPaths: Set<String> = []
+        var otherAccountLibraryPaths: Set<String> = []
         if diskScan {
             let excluded = Set(["System", "private", "dev", "Volumes", "cores", "bin", "sbin", "usr", "Users", "Library"])
             let topLevel = try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
@@ -259,15 +259,10 @@ struct FileScanner: ScanServicing {
                 skipped += 1
                 skippedLocations.append(skippedUsersPath)
             }
-            userLibraryPaths = Set(([accountHome] + userHomeDiscovery.homes).map {
+            otherAccountLibraryPaths = Set(userHomeDiscovery.homes.map {
                 $0.appendingPathComponent("Library", isDirectory: true).standardizedFileURL.path
             })
-            let homeLibrary = accountHome.appendingPathComponent("Library", isDirectory: true)
-            let selectedCacheRoots = [
-                homeLibrary.appendingPathComponent("Caches", isDirectory: true),
-                homeLibrary.appendingPathComponent("Logs", isDirectory: true),
-                homeLibrary.appendingPathComponent("Developer/Xcode/DerivedData", isDirectory: true),
-                homeLibrary.appendingPathComponent("Developer/CoreSimulator/Caches", isDirectory: true),
+            let selectedSystemCacheRoots = [
                 URL(fileURLWithPath: "/Library/Caches", isDirectory: true),
                 URL(fileURLWithPath: "/Library/Logs", isDirectory: true),
                 URL(fileURLWithPath: "/Library/Developer/Xcode/DerivedData", isDirectory: true),
@@ -288,7 +283,7 @@ struct FileScanner: ScanServicing {
             let localDeveloperTools = [root.appendingPathComponent("usr/local", isDirectory: true)].filter { isDirectory($0.path) }
             var discoveredScanRoots = [accountHome]
             discoveredScanRoots.append(contentsOf: userHomeDiscovery.homes)
-            discoveredScanRoots.append(contentsOf: selectedCacheRoots)
+            discoveredScanRoots.append(contentsOf: selectedSystemCacheRoots)
             discoveredScanRoots.append(contentsOf: sharedScanRoots)
             discoveredScanRoots.append(contentsOf: externalScanRoots)
             discoveredScanRoots.append(contentsOf: systemScanRoots)
@@ -317,7 +312,7 @@ struct FileScanner: ScanServicing {
                 guard SafeFilePolicy.isInside(directory.path, root: root.path) || directory.standardizedFileURL.path == root.path,
                       isDirectory(directory.path),
                       !isPackageDirectory(directory),
-                      !(diskScan && userLibraryPaths.contains(directory.standardizedFileURL.path)),
+                      !(diskScan && otherAccountLibraryPaths.contains(directory.standardizedFileURL.path)),
                       !SafeFilePolicy.shouldSkipDirectory(directory.path, homeDirectory: accountHome) else {
                     continue
                 }
@@ -413,7 +408,7 @@ struct FileScanner: ScanServicing {
                     if isSymbolicLink(item.path) { continue }
                     if isDirectory(item.path) {
                         if isPackageDirectory(item) || SafeFilePolicy.shouldSkipDirectory(item.path, homeDirectory: accountHome) { continue }
-                        if diskScan && userLibraryPaths.contains(item.standardizedFileURL.path) { continue }
+                        if diskScan && otherAccountLibraryPaths.contains(item.standardizedFileURL.path) { continue }
                         pendingDirectories.append(item)
                     } else {
                         guard let metadata = readRegularFileMetadata(item.path),
@@ -491,9 +486,18 @@ struct FileScanner: ScanServicing {
                 duplicate: duplicate,
                 cacheDetails: cacheDetails
             )
-            let note = SafeFilePolicy.requiresExtraConfirmation(path: record.path, categories: categories)
-                ? "Review carefully: this may be a personal file. It starts unselected."
-                : "Candidate only: confirm the path and expected effect before moving it to Trash."
+            let note: String
+            if SafeFilePolicy.isReadOnlyCurrentAccountLibraryItem(
+                path: record.path,
+                categories: categories,
+                homeDirectory: accountHome
+            ) {
+                note = "Read-only: app Library files can contain settings or state the app needs."
+            } else if SafeFilePolicy.requiresExtraConfirmation(path: record.path, categories: categories) {
+                note = "Review carefully: this may be a personal file. It starts unselected."
+            } else {
+                note = "Candidate only: confirm the path and expected effect before moving it to Trash."
+            }
             return ScanItem(
                 path: url.path,
                 identity: record.identity,

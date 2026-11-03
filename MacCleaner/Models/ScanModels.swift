@@ -182,6 +182,9 @@ struct ScanItem: Codable, Identifiable, Hashable, Sendable {
         if isCloudManaged == true {
             return "This is a local copy of an iCloud Drive item. Mac Cleaner keeps cloud-managed files out of Trash because removal could sync to iCloud."
         }
+        if safetyNote.hasPrefix("Read-only:") {
+            return "This app Library file may hold settings or working data, so Mac Cleaner leaves it in place."
+        }
         if categories.contains(.exactDuplicate) { return "These files have the same contents. The copy you choose stays; other accessible copies are checked for review." }
         if categories.contains(.aiCacheCandidate) { return "The app may recreate temporary files. Conversations, sign-in details, settings, and downloaded models are kept out of this scan." }
         if categories.contains(.cacheCandidate) {
