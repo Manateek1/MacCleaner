@@ -1,0 +1,86 @@
+name: MacCleaner
+configs:
+  Debug: debug
+  Test: debug
+  Release: release
+options:
+  bundleIdPrefix: com.manateek1
+  xcodeVersion: "15.0"
+  projectFormat: xcode15_0
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    ARCHS: arm64
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_APP_SANDBOX: NO
+targets:
+  MacCleaner:
+    type: application
+    platform: macOS
+    sources:
+      - path: MacCleaner
+        excludes:
+          - "Services/ImageIOPhotoTypePolicy 2.swift"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.manateek1.MacCleaner
+        CODE_SIGN_ENTITLEMENTS: ""
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_CFBundleDisplayName: Mac Cleaner
+        INFOPLIST_KEY_LSMinimumSystemVersion: "26.0"
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Mac Cleaner compares photos stored on this Mac to find similar pictures. Selected photos are removed only after you confirm."
+        INFOPLIST_KEY_NSDesktopFolderUsageDescription: "Mac Cleaner checks files already stored on your Desktop to find large files, exact duplicates, and recognized temporary files. Cloud-only files are not downloaded, and nothing is moved without your confirmation."
+        INFOPLIST_KEY_NSDocumentsFolderUsageDescription: "Mac Cleaner checks Documents for large files, exact duplicates, and recognized temporary files. Scans are read-only; selected files go to Trash only after you confirm."
+        INFOPLIST_KEY_NSDownloadsFolderUsageDescription: "Mac Cleaner checks Downloads for large files, exact duplicates, and recognized temporary files. Scans are read-only; selected files go to Trash only after you confirm."
+        ENABLE_HARDENED_RUNTIME: YES
+        MARKETING_VERSION: 0.5.3
+        CURRENT_PROJECT_VERSION: 104
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: YES
+      configs:
+        Test:
+          ENABLE_APP_SANDBOX: NO
+          CODE_SIGN_ENTITLEMENTS: ""
+  MacCleanerTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/MacCleanerTests
+    dependencies:
+      - target: MacCleaner
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.manateek1.MacCleanerTests
+        ENABLE_APP_SANDBOX: NO
+        GENERATE_INFOPLIST_FILE: YES
+  MacCleanerUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/MacCleanerUITests
+    dependencies:
+      - target: MacCleaner
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.manateek1.MacCleanerUITests
+schemes:
+  MacCleaner:
+    build:
+      targets:
+        MacCleaner: all
+        MacCleanerTests: [test]
+        MacCleanerUITests: [test]
+    test:
+      config: Test
+      targets:
+        - MacCleanerTests
+        - MacCleanerUITests
+    run:
+      config: Debug
+    archive:
+      config: Release

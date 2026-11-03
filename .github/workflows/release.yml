@@ -1,0 +1,370 @@
+name: Signed macOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag on main, for example v0.5.3
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: macos-release-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    name: Build and test without release credentials
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      commit: ${{ steps.release-source.outputs.commit }}
+      version: ${{ steps.release-source.outputs.version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.release_tag }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify tag and Tahoe Apple silicon release target
+        id: release-source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Enter a version tag such as v0.5.3." >&2
+            exit 1
+          fi
+
+          TAG_COMMIT=$(git rev-parse "${RELEASE_TAG}^{commit}")
+          if [[ "$TAG_COMMIT" != "$(git rev-parse HEAD)" ]]; then
+            echo "The checkout does not match the requested release tag." >&2
+            exit 1
+          fi
+
+          TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object | [.type, .sha] | @tsv')
+          IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          while [[ "$TAG_OBJECT_TYPE" == "tag" ]]; do
+            TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${TAG_OBJECT_SHA}" --jq '.object | [.type, .sha] | @tsv')
+            IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          done
+          if [[ "$TAG_OBJECT_TYPE" != "commit" ]]; then
+            echo "The release tag does not resolve to a commit." >&2
+            exit 1
+          fi
+          REMOTE_TAG_COMMIT=$TAG_OBJECT_SHA
+          if [[ "$REMOTE_TAG_COMMIT" != "$TAG_COMMIT" ]]; then
+            echo "The requested release tag changed during checkout." >&2
+            exit 1
+          fi
+          COMPARE_STATUS=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${RELEASE_TAG}...main" --jq .status)
+          if [[ "$COMPARE_STATUS" != "ahead" && "$COMPARE_STATUS" != "identical" ]]; then
+            echo "The release tag must point to a commit already on main." >&2
+            exit 1
+          fi
+
+          VERSION=$(sed -n 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*//p' Project.yml | head -1)
+          if [[ -z "$VERSION" ]]; then
+            echo "MARKETING_VERSION is missing from Project.yml." >&2
+            exit 1
+          fi
+          if [[ "${RELEASE_TAG#v}" != "$VERSION" ]]; then
+            echo "Tag ${RELEASE_TAG} does not match app version ${VERSION}." >&2
+            exit 1
+          fi
+          echo "commit=$TAG_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project and run core checks
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          ./script/run_core_checks.sh
+
+      - name: Run unit and UI tests
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project MacCleaner.xcodeproj \
+            -scheme MacCleaner \
+            -configuration Test \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/TestDerivedData" \
+            CODE_SIGN_IDENTITY=- \
+            test
+
+      - name: Archive unsigned app
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_VERSION: ${{ steps.release-source.outputs.version }}
+          SOURCE_COMMIT: ${{ steps.release-source.outputs.commit }}
+        run: |
+          set -euo pipefail
+          ARCHIVE_PATH="$RUNNER_TEMP/MacCleaner.xcarchive"
+          APP_PATH="$ARCHIVE_PATH/Products/Applications/MacCleaner.app"
+          OUTPUT_DIR="$RUNNER_TEMP/unsigned-release"
+          xcodebuild archive \
+            -project MacCleaner.xcodeproj \
+            -scheme MacCleaner \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            -derivedDataPath "$RUNNER_TEMP/ReleaseDerivedData" \
+            ARCHS='arm64' \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY=- \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+          MINIMUM_MACOS=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP_PATH/Contents/Info.plist")
+          ARCHITECTURES=$(lipo -archs "$APP_PATH/Contents/MacOS/MacCleaner")
+          if [[ "$MINIMUM_MACOS" != "26.0" || "$ARCHITECTURES" != "arm64" ]]; then
+            echo "Release must target macOS Tahoe 26+ on Apple silicon; found macOS $MINIMUM_MACOS, architectures: $ARCHITECTURES." >&2
+            exit 1
+          fi
+          APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")
+          if [[ "$APP_VERSION" != "$RELEASE_VERSION" ]]; then
+            echo "The archived app version $APP_VERSION does not match the requested release version $RELEASE_VERSION." >&2
+            exit 1
+          fi
+
+          mkdir -p "$OUTPUT_DIR"
+          ditto -c -k --keepParent "$APP_PATH" "$OUTPUT_DIR/MacCleaner-${RELEASE_VERSION}-unsigned.zip"
+          printf '%s\n%s\n' "$RELEASE_TAG" "$SOURCE_COMMIT" > "$OUTPUT_DIR/source.txt"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mac-cleaner-unsigned
+          path: ${{ runner.temp }}/unsigned-release/
+          if-no-files-found: error
+          retention-days: 1
+
+  sign-notarize:
+    name: Sign and notarize after release approval
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-test
+    runs-on: macos-26
+    timeout-minutes: 60
+    environment:
+      name: macos-release
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mac-cleaner-unsigned
+          path: ${{ runner.temp }}/unsigned-release
+
+      - name: Confirm tag still identifies the tested commit
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TESTED_COMMIT: ${{ needs.build-and-test.outputs.commit }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          read -r ARTIFACT_TAG < "$RUNNER_TEMP/unsigned-release/source.txt"
+          ARTIFACT_COMMIT=$(sed -n '2p' "$RUNNER_TEMP/unsigned-release/source.txt")
+          if [[ "$ARTIFACT_TAG" != "$RELEASE_TAG" || "$ARTIFACT_COMMIT" != "$TESTED_COMMIT" ]]; then
+            echo "The unsigned artifact metadata does not match the tested release source." >&2
+            exit 1
+          fi
+          TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object | [.type, .sha] | @tsv')
+          IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          while [[ "$TAG_OBJECT_TYPE" == "tag" ]]; do
+            TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${TAG_OBJECT_SHA}" --jq '.object | [.type, .sha] | @tsv')
+            IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          done
+          if [[ "$TAG_OBJECT_TYPE" != "commit" ]]; then
+            echo "The release tag does not resolve to a commit." >&2
+            exit 1
+          fi
+          TAG_COMMIT=$TAG_OBJECT_SHA
+          if [[ "$TAG_COMMIT" != "$TESTED_COMMIT" ]]; then
+            echo "The tag changed after the tested build; refusing to sign it." >&2
+            exit 1
+          fi
+
+      - name: Check release credentials
+        env:
+          DEVELOPER_ID_CERTIFICATE_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
+          DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          DEVELOPER_TEAM_ID: ${{ secrets.DEVELOPER_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in \
+            DEVELOPER_ID_CERTIFICATE_P12_BASE64 \
+            DEVELOPER_ID_CERTIFICATE_PASSWORD \
+            DEVELOPER_TEAM_ID \
+            APPLE_ID \
+            APPLE_APP_SPECIFIC_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "Required macos-release environment secret is missing: $name" >&2
+              missing=1
+            fi
+          done
+          if [[ "$missing" -ne 0 ]]; then
+            echo "See RELEASING.md for one-time setup. No release has been published." >&2
+            exit 1
+          fi
+
+      - name: Import Developer ID certificate
+        env:
+          DEVELOPER_ID_CERTIFICATE_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
+          DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/MacCleaner-release.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          printf '%s' "$DEVELOPER_ID_CERTIFICATE_P12_BASE64" | base64 -D > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -k "$KEYCHAIN_PATH" \
+            -P "$DEVELOPER_ID_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          rm -f "$CERTIFICATE_PATH"
+
+      - name: Sign, notarize, staple, and validate the app
+        id: release
+        env:
+          DEVELOPER_TEAM_ID: ${{ secrets.DEVELOPER_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.build-and-test.outputs.version }}
+          SOURCE_COMMIT: ${{ needs.build-and-test.outputs.commit }}
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/signed/MacCleaner.app"
+          APP_ZIP="$RUNNER_TEMP/unsigned-release/MacCleaner-${RELEASE_VERSION}-unsigned.zip"
+          NOTARY_ZIP="$RUNNER_TEMP/MacCleaner-notarization.zip"
+          OUTPUT_DIR="$RUNNER_TEMP/signed-release"
+          mkdir -p "$RUNNER_TEMP/signed" "$OUTPUT_DIR"
+          ditto -x -k "$APP_ZIP" "$RUNNER_TEMP/signed"
+
+          SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$RUNNER_TEMP/MacCleaner-release.keychain-db" \
+            | awk -F '"' -v team="($DEVELOPER_TEAM_ID)" '/Developer ID Application/ && index($0, team) > 0 { print $2; exit }')
+          if [[ -z "$SIGNING_IDENTITY" ]]; then
+            echo "No matching Developer ID Application identity was found." >&2
+            exit 1
+          fi
+          codesign --force --deep --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$APP_PATH"
+          SIGNATURE=$(codesign -dv --verbose=4 "$APP_PATH" 2>&1)
+          grep -F 'Authority=Developer ID Application' <<< "$SIGNATURE"
+          grep -F "TeamIdentifier=$DEVELOPER_TEAM_ID" <<< "$SIGNATURE"
+          grep -F 'runtime' <<< "$SIGNATURE"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+          ditto -c -k --keepParent "$APP_PATH" "$NOTARY_ZIP"
+          xcrun notarytool submit "$NOTARY_ZIP" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$DEVELOPER_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --wait
+          xcrun stapler staple -v "$APP_PATH"
+          xcrun stapler validate -v "$APP_PATH"
+          spctl --assess --type execute --verbose=4 "$APP_PATH"
+
+          ditto -c -k --keepParent "$APP_PATH" "$OUTPUT_DIR/MacCleaner-${RELEASE_VERSION}-apple-silicon.zip"
+          (cd "$OUTPUT_DIR" && shasum -a 256 "MacCleaner-${RELEASE_VERSION}-apple-silicon.zip" > "MacCleaner-${RELEASE_VERSION}-apple-silicon.zip.sha256")
+          printf 'Mac Cleaner %s\n\nThis Apple silicon macOS app was signed with Developer ID, notarized by Apple, and stapled.\n\nMinimum supported version: macOS Tahoe 26.\n\nVerify the download with: `shasum -a 256 -c MacCleaner-%s-apple-silicon.zip.sha256`\n' \
+            "$RELEASE_VERSION" "$RELEASE_VERSION" > "$OUTPUT_DIR/release-notes.md"
+          printf '%s\n%s\n' "$RELEASE_TAG" "$SOURCE_COMMIT" > "$OUTPUT_DIR/source.txt"
+          echo "version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Remove temporary signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/MacCleaner-release.keychain-db" || true
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mac-cleaner-signed-release
+          path: ${{ runner.temp }}/signed-release/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish verified GitHub release
+    if: github.ref == 'refs/heads/main'
+    needs: [build-and-test, sign-notarize]
+    runs-on: macos-26
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mac-cleaner-signed-release
+          path: ${{ runner.temp }}/signed-release
+
+      - name: Confirm tag and checksum before publishing
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TESTED_COMMIT: ${{ needs.build-and-test.outputs.commit }}
+          RELEASE_VERSION: ${{ needs.sign-notarize.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object | [.type, .sha] | @tsv')
+          IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          while [[ "$TAG_OBJECT_TYPE" == "tag" ]]; do
+            TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${TAG_OBJECT_SHA}" --jq '.object | [.type, .sha] | @tsv')
+            IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          done
+          if [[ "$TAG_OBJECT_TYPE" != "commit" ]]; then
+            echo "The release tag does not resolve to a commit." >&2
+            exit 1
+          fi
+          TAG_COMMIT=$TAG_OBJECT_SHA
+          if [[ "$TAG_COMMIT" != "$TESTED_COMMIT" || "${RELEASE_TAG#v}" != "$RELEASE_VERSION" ]]; then
+            echo "Release tag, tested source, and app version do not match." >&2
+            exit 1
+          fi
+          cd "$RUNNER_TEMP/signed-release"
+          read -r ARTIFACT_TAG < source.txt
+          ARTIFACT_COMMIT=$(sed -n '2p' source.txt)
+          if [[ "$ARTIFACT_TAG" != "$RELEASE_TAG" || "$ARTIFACT_COMMIT" != "$TESTED_COMMIT" ]]; then
+            echo "The signed artifact metadata does not match the tested release source." >&2
+            exit 1
+          fi
+          shasum -a 256 -c "MacCleaner-${RELEASE_VERSION}-apple-silicon.zip.sha256"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.sign-notarize.outputs.version }}
+          TESTED_COMMIT: ${{ needs.build-and-test.outputs.commit }}
+        run: |
+          set -euo pipefail
+          RELEASE_DIR="$RUNNER_TEMP/signed-release"
+          gh release create "$RELEASE_TAG" \
+            "$RELEASE_DIR/MacCleaner-${RELEASE_VERSION}-apple-silicon.zip" \
+            "$RELEASE_DIR/MacCleaner-${RELEASE_VERSION}-apple-silicon.zip.sha256" \
+            --target "$TESTED_COMMIT" \
+            --title "Mac Cleaner ${RELEASE_VERSION}" \
+            --notes-file "$RELEASE_DIR/release-notes.md"

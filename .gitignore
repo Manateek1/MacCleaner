@@ -1,0 +1,32 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+*.xccheckout
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Local configuration and signing material
+.codex/
+.env
+.env.*
+!.env.example
+*.mobileprovision
+*.p12
+*.cer
+*.key
+
+# Generated app bundles and logs
+dist/
+*.log
+.DS_Store
+
