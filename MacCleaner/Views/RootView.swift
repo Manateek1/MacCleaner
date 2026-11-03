@@ -171,7 +171,6 @@ struct RootView: View {
                 }
             }
             .listStyle(.sidebar)
-            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("sidebar-navigation")
             .navigationSplitViewColumnWidth(min: 210, ideal: 236, max: 300)
         } detail: {
