@@ -46,6 +46,7 @@ struct ApplicationUpdaterView: View {
     }
 
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 5) {
@@ -92,14 +93,12 @@ struct ApplicationUpdaterView: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(maxWidth: 260)
                 }
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(filteredTargets) { target in
-                            applicationRow(target)
-                        }
+                LazyVStack(spacing: 10) {
+                    ForEach(filteredTargets) { target in
+                        applicationRow(target)
                     }
-                    .padding(.bottom, 4)
                 }
+                .padding(.bottom, 4)
             }
             if scanned && (inaccessibleLocations > 0 || inventoryWasLimited || inventoryWasCancelled) {
                 Label(
@@ -114,7 +113,9 @@ struct ApplicationUpdaterView: View {
                 .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(28)
+        }
         .task {
             if !scanned && !loading { scan() }
         }
