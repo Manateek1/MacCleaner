@@ -37,6 +37,7 @@ jobs:
           xcodebuild -project MacCleaner.xcodeproj -scheme MacCleaner
           -configuration Test -destination 'platform=macOS'
           -derivedDataPath build/DerivedData
+          -resultBundlePath build/TestResults.xcresult
           CODE_SIGN_IDENTITY=- test
       - name: Run Xcode static analyzer
         run: >-
@@ -44,3 +45,11 @@ jobs:
           -configuration Release -destination 'platform=macOS'
           -derivedDataPath build/AnalyzeData
           CODE_SIGN_IDENTITY=- analyze
+      - name: Save failed test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-test-results
+          path: build/TestResults.xcresult
+          if-no-files-found: ignore
+          retention-days: 3

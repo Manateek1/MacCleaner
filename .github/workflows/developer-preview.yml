@@ -1,0 +1,243 @@
+name: Mac Cleaner developer preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Unique preview tag, such as v0.5.7-preview.1
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: macos-preview-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    name: Build and test developer preview
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      commit: ${{ steps.preview-source.outputs.commit }}
+      version: ${{ steps.preview-source.outputs.version }}
+      build: ${{ steps.preview-source.outputs.build }}
+      release_tag: ${{ steps.preview-source.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify preview tag and source version
+        id: preview-source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-preview\.[1-9][0-9]*$ ]]; then
+            echo "Enter a unique preview tag such as v0.5.7-preview.1." >&2
+            exit 1
+          fi
+
+          VERSION=$(sed -n 's/^[[:space:]]*MARKETING_VERSION:[[:space:]]*//p' Project.yml | head -1)
+          BUILD=$(sed -n 's/^[[:space:]]*CURRENT_PROJECT_VERSION:[[:space:]]*//p' Project.yml | head -1)
+          if [[ -z "$VERSION" || -z "$BUILD" ]]; then
+            echo "The app version or build number is missing from Project.yml." >&2
+            exit 1
+          fi
+          TAG_VERSION="${RELEASE_TAG#v}"
+          TAG_VERSION="${TAG_VERSION%-preview.*}"
+          if [[ "$TAG_VERSION" != "$VERSION" ]]; then
+            echo "Preview tag ${RELEASE_TAG} does not match app version ${VERSION}." >&2
+            exit 1
+          fi
+
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Preview tag ${RELEASE_TAG} already exists; choose a new preview number." >&2
+            exit 1
+          fi
+
+          echo "commit=$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project and run core checks
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          ./script/run_core_checks.sh
+
+      - name: Run unit and UI tests
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project MacCleaner.xcodeproj \
+            -scheme MacCleaner \
+            -configuration Test \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/TestDerivedData" \
+            CODE_SIGN_IDENTITY=- \
+            test
+
+      - name: Archive and ad-hoc sign Apple silicon app
+        env:
+          RELEASE_TAG: ${{ steps.preview-source.outputs.release_tag }}
+          RELEASE_VERSION: ${{ steps.preview-source.outputs.version }}
+          RELEASE_BUILD: ${{ steps.preview-source.outputs.build }}
+          SOURCE_COMMIT: ${{ steps.preview-source.outputs.commit }}
+        run: |
+          set -euo pipefail
+          ARCHIVE_PATH="$RUNNER_TEMP/MacCleaner.xcarchive"
+          APP_PATH="$ARCHIVE_PATH/Products/Applications/MacCleaner.app"
+          OUTPUT_DIR="$RUNNER_TEMP/developer-preview"
+          ARCHIVE_NAME="MacCleaner-${RELEASE_VERSION}-build${RELEASE_BUILD}-developer-preview.zip"
+
+          xcodebuild archive \
+            -project MacCleaner.xcodeproj \
+            -scheme MacCleaner \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            -derivedDataPath "$RUNNER_TEMP/ReleaseDerivedData" \
+            ARCHS='arm64' \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY=- \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+          MINIMUM_MACOS=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP_PATH/Contents/Info.plist")
+          ARCHITECTURES=$(lipo -archs "$APP_PATH/Contents/MacOS/MacCleaner")
+          APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")
+          APP_BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")
+          if [[ "$MINIMUM_MACOS" != "26.0" || "$ARCHITECTURES" != "arm64" ]]; then
+            echo "Preview must target macOS Tahoe 26+ on Apple silicon; found macOS $MINIMUM_MACOS, architectures: $ARCHITECTURES." >&2
+            exit 1
+          fi
+          if [[ "$APP_VERSION" != "$RELEASE_VERSION" || "$APP_BUILD" != "$RELEASE_BUILD" ]]; then
+            echo "The archived app version/build does not match Project.yml." >&2
+            exit 1
+          fi
+
+          codesign --force --deep --sign - --options runtime "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          SIGNATURE=$(codesign -dv --verbose=4 "$APP_PATH" 2>&1)
+          if ! grep -Fq 'Signature=adhoc' <<< "$SIGNATURE"; then
+            echo "The preview must have a valid ad-hoc signature." >&2
+            exit 1
+          fi
+          if grep -Fq 'Authority=Developer ID Application' <<< "$SIGNATURE"; then
+            echo "The developer preview must not be signed with Developer ID; use the signed release workflow." >&2
+            exit 1
+          fi
+
+          mkdir -p "$OUTPUT_DIR"
+          ditto -c -k --keepParent "$APP_PATH" "$OUTPUT_DIR/$ARCHIVE_NAME"
+          (cd "$OUTPUT_DIR" && shasum -a 256 "$ARCHIVE_NAME" > "$ARCHIVE_NAME.sha256")
+          printf '%s\n%s\n%s\n%s\n' \
+            "$RELEASE_TAG" "$SOURCE_COMMIT" "$RELEASE_VERSION" "$RELEASE_BUILD" \
+            > "$OUTPUT_DIR/source.txt"
+
+          cat > "$OUTPUT_DIR/release-notes.md" <<EOF
+          Mac Cleaner ${RELEASE_VERSION} (build ${RELEASE_BUILD})
+
+          This is an ad-hoc signed developer preview for Apple silicon Macs running macOS Tahoe 26 or later. It is not signed with an Apple Developer ID and has not been notarized by Apple. macOS Gatekeeper may warn about or prevent opening this app. This preview is provided as-is; no Gatekeeper bypass instructions are provided.
+
+          The app scans local files read-only. It does not move anything unless you select items and confirm inside the app. Protected folders require Full Disk Access in macOS settings.
+
+          Source commit: ${SOURCE_COMMIT}
+
+          Verify the ZIP checksum with: shasum -a 256 -c ${ARCHIVE_NAME}.sha256
+          EOF
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mac-cleaner-developer-preview
+          path: ${{ runner.temp }}/developer-preview/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-preview:
+    name: Publish GitHub preview release
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mac-cleaner-developer-preview
+          path: ${{ runner.temp }}/developer-preview
+
+      - name: Verify tested source and archive checksum
+        env:
+          RELEASE_TAG: ${{ needs.build-and-test.outputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.build-and-test.outputs.version }}
+          RELEASE_BUILD: ${{ needs.build-and-test.outputs.build }}
+          TESTED_COMMIT: ${{ needs.build-and-test.outputs.commit }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/developer-preview"
+          read -r ARTIFACT_TAG < source.txt
+          ARTIFACT_COMMIT=$(sed -n '2p' source.txt)
+          ARTIFACT_VERSION=$(sed -n '3p' source.txt)
+          ARTIFACT_BUILD=$(sed -n '4p' source.txt)
+          if [[ "$ARTIFACT_TAG" != "$RELEASE_TAG" || \
+                "$ARTIFACT_COMMIT" != "$TESTED_COMMIT" || \
+                "$ARTIFACT_VERSION" != "$RELEASE_VERSION" || \
+                "$ARTIFACT_BUILD" != "$RELEASE_BUILD" ]]; then
+            echo "The preview archive metadata does not match the tested source." >&2
+            exit 1
+          fi
+          ARCHIVE_NAME="MacCleaner-${RELEASE_VERSION}-build${RELEASE_BUILD}-developer-preview.zip"
+          shasum -a 256 -c "$ARCHIVE_NAME.sha256"
+
+      - name: Publish marked prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.build-and-test.outputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.build-and-test.outputs.version }}
+          RELEASE_BUILD: ${{ needs.build-and-test.outputs.build }}
+          TESTED_COMMIT: ${{ needs.build-and-test.outputs.commit }}
+        run: |
+          set -euo pipefail
+          RELEASE_DIR="$RUNNER_TEMP/developer-preview"
+          ARCHIVE_NAME="MacCleaner-${RELEASE_VERSION}-build${RELEASE_BUILD}-developer-preview.zip"
+          gh release create "$RELEASE_TAG" \
+            "$RELEASE_DIR/$ARCHIVE_NAME" \
+            "$RELEASE_DIR/$ARCHIVE_NAME.sha256" \
+            --target "$TESTED_COMMIT" \
+            --title "Mac Cleaner ${RELEASE_VERSION} Preview (ad-hoc signed)" \
+            --prerelease \
+            --notes-file "$RELEASE_DIR/release-notes.md"
+
+          TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object | [.type, .sha] | @tsv')
+          IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          while [[ "$TAG_OBJECT_TYPE" == "tag" ]]; do
+            TAG_OBJECT=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${TAG_OBJECT_SHA}" --jq '.object | [.type, .sha] | @tsv')
+            IFS=$'\t' read -r TAG_OBJECT_TYPE TAG_OBJECT_SHA <<< "$TAG_OBJECT"
+          done
+          if [[ "$TAG_OBJECT_TYPE" != "commit" || "$TAG_OBJECT_SHA" != "$TESTED_COMMIT" ]]; then
+            echo "The preview release tag does not point to the tested commit." >&2
+            exit 1
+          fi
+
+          IS_PRERELEASE=$(gh release view "$RELEASE_TAG" --json isPrerelease --jq '.isPrerelease')
+          if [[ "$IS_PRERELEASE" != "true" ]]; then
+            echo "The GitHub release was not marked as a prerelease." >&2
+            exit 1
+          fi
+          echo "Published developer preview: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"

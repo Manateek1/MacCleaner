@@ -523,7 +523,7 @@ final class ScanViewModel: ObservableObject {
         return duplicateKeeperChoices[groupID] == nil
     }
 
-    func chooseDuplicateKeeper(for item: ScanItem) {
+    func chooseDuplicateKeeper(for item: ScanItem, among reviewedItems: [ScanItem]? = nil) {
         guard !isCleaning,
               let groupID = item.duplicateGroupID,
               let root = selectedRoot,
@@ -532,6 +532,7 @@ final class ScanViewModel: ObservableObject {
         guard group.count > 1, group.contains(where: { $0.path == item.path }) else { return }
 
         duplicateKeeperChoices[groupID] = item.path
+        let reviewedPaths = Set((reviewedItems ?? group).map(\.path))
         let eligiblePaths = Set(group.compactMap { candidate -> String? in
             if case .allowed = SafeFilePolicy.assess(candidate, inside: root) { return candidate.path }
             return nil
@@ -540,7 +541,8 @@ final class ScanViewModel: ObservableObject {
             in: group,
             keepingPath: item.path,
             from: selectedPaths,
-            eligiblePaths: eligiblePaths
+            eligiblePaths: eligiblePaths,
+            reviewedPaths: reviewedPaths
         )
     }
 

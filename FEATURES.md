@@ -1,6 +1,6 @@
 # Feature status
 
-Mac Cleaner 0.5.4 build 106 builds on the first usable local-only beta
+Mac Cleaner 0.5.7 build 110 builds on the first usable local-only beta
 (0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
@@ -57,11 +57,13 @@ extensions, and browser messaging are outside the requested scope.
   same App Security review shown on its own page. It records aggregate results
   without storing app names or paths, and offers a direct link to the detailed
   review. Folder-specific scans do not run a Mac-wide App Security check.
-- Large and old files with configurable thresholds.
+- Large and old files with configurable thresholds. Specialized file-review pages
+  filter a saved Smart Scan to the current tool’s categories. Switching tools
+  clears the prior selection, and category totals update after cleanup.
 - Exact duplicate file detection using size grouping, partial hashes, and full
   streamed SHA-256; a saved oldest- or newest-modified suggestion is marked to
   keep, and users can choose a different copy to keep while other accessible
-  copies are checked for review. Hard-linked files are excluded.
+  copies currently shown are checked for review. Hard-linked files are excluded.
 - Conservative cache/log and AI-tool cache candidate rules. The default Xcode
   Derived Data, Simulator, Homebrew, pip, and npm caches are identified by tool
   and get specific plain-language explanations. Xcode archives, Simulator
@@ -177,7 +179,9 @@ extensions, and browser messaging are outside the requested scope.
   to Trash after confirmation.
 - Space Lens selection, Finder reveal, and storage refresh controls expose
   descriptive labels to VoiceOver.
-- Local activity summaries without file names or paths.
+- Local activity summaries without file names or paths. Settings can stop saving
+  new summaries while preserving existing history, or clear history after a
+  separate confirmation. Clearing history preserves scan reviews and files.
 - Device Backups reviews folders in the current account's standard local
   iPhone/iPad backup location. It shows folder names, file counts, logical
   sizes, and the newest file-modified date without opening backup contents.
@@ -414,15 +418,20 @@ extensions, and browser messaging are outside the requested scope.
   file-modified date, not a verified backup completion time. Expected metadata
   does not prove that a backup can restore a device. Sizes are logical sums and
   may not equal space reclaimed when storage is shared or cloned.
-- No signed public release has been published yet. Until one is available,
-  local builds are for development and testing.
+- GitHub can publish a tested Apple silicon developer-preview ZIP as a marked
+  prerelease. The app is ad-hoc signed, with no Apple Developer ID signature or
+  notarization, so Gatekeeper may warn about or prevent opening it. A notarized
+  release is not available yet; local builds are also for development and
+  testing.
 - To use Full Disk Access for a whole-Mac scan, this build is not restricted by
   App Sandbox. While Full Disk Access is enabled, Mac Cleaner can read protected
   local files outside its app folder. Scans remain read-only; cleanup still
   requires selection and confirmation. macOS can continue to block some areas,
   which are reported as skipped. Full Disk Access can be turned off in System
-  Settings. Local development builds use an ad-hoc signature. A public build
-  must pass the signing and notarization workflow before publication.
+  Settings. Local development builds and the marked preview use an ad-hoc
+  signature. The preview does not pass Gatekeeper's Developer ID and
+  notarization checks; a frictionless public release still requires those
+  checks.
 - Application sizes exclude symlinks and shared support data, may be partial,
   and are not a measure of space that can definitely be recovered. Inventory
   is limited to accessible standard Applications folders.
@@ -541,10 +550,14 @@ extensions, and browser messaging are outside the requested scope.
 - Independent feature-level accessibility and keyboard-navigation review,
   broader light/dark and resizing coverage, and live large-tree/performance
   runs on Tahoe 26+ Apple silicon remain future QA.
-- The release workflow builds and tests an arm64 app on macOS 26, signs it with a
-  Developer ID certificate, submits it to Apple notarization, staples the
-  ticket, and attaches the verified ZIP and checksum to GitHub Releases. It
-  requires maintainer-owned signing credentials in GitHub Actions secrets.
-- Local development builds remain ad-hoc signed and are not suitable as
-  frictionless downloads. Public releases are not published until signing and
-  notarization complete successfully.
+- The developer-preview workflow builds and tests an arm64 app on macOS 26,
+  ad-hoc signs the app bundle, and publishes a checksum-verified GitHub
+  prerelease without Apple credentials. The app is not Developer ID signed or
+  notarized, and Gatekeeper may block it.
+- The separate signed release workflow signs with a Developer ID certificate,
+  submits the app to Apple notarization, staples the ticket, and attaches the
+  verified ZIP and checksum to GitHub Releases. It requires maintainer-owned
+  signing credentials in GitHub Actions secrets.
+- The ad-hoc signed preview is a developer download, not a frictionless install.
+  Frictionless distribution remains unfinished until signing and notarization
+  are configured.

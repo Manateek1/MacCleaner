@@ -6,11 +6,13 @@ language, and cleanup stays under your control.
 
 ## Download
 
-The app targets macOS Tahoe 26 or later and runs on Apple silicon.
-The signed download will appear on the
-[GitHub Releases page](https://github.com/Manateek1/MacCleaner/releases/latest)
-once Developer ID signing and Apple notarization are configured. Until then,
-the repository includes source and instructions for building it locally.
+The app targets macOS Tahoe 26 or later and runs on Apple silicon. Get the
+current app ZIP from the
+[GitHub Releases page](https://github.com/Manateek1/MacCleaner/releases). The
+preview has an ad-hoc signature but no Apple Developer ID signature and has not
+been notarized, so Gatekeeper may warn about or prevent opening it. The GitHub
+release notes identify the tested source commit and include a checksum for the
+download.
 
 ## What works
 
