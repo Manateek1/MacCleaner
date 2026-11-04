@@ -90,6 +90,7 @@
 		B6529C36678679B01FEFFBE9 /* LocalProtectionStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC29DBAD58AA762813312413 /* LocalProtectionStatusTests.swift */; };
 		B6F348FB26A085523EC38965 /* LocalMacOSUpdateServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A5D1304680CF7CEF6CD78D /* LocalMacOSUpdateServiceTests.swift */; };
 		BF93155985F4F3A295E0DCF1 /* DuplicateKeepSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B1A64C4A3D77A7B78C5200 /* DuplicateKeepSelectionTests.swift */; };
+		C28F4C5A026B18E17F923AE1 /* ReviewScopeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86AB28766E1CF298DFE6D6C /* ReviewScopeTests.swift */; };
 		C35DD6AD1971ADF0792EF8EC /* XcodeDeviceSupportInventoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF607B90A37B3D7CD310479 /* XcodeDeviceSupportInventoryTests.swift */; };
 		C3B5C688EF0943EC92F71DDD /* XcodeArchiveInventory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3FC3145A0A2450777F80B4 /* XcodeArchiveInventory.swift */; };
 		C3BA4AB35DF4BC88B936781B /* LocalDiskHealthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9722F60EDC02571F5CD490E /* LocalDiskHealthService.swift */; };
@@ -227,6 +228,7 @@
 		AD13934331A9D7AB658223CA /* ActivityTrendTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTrendTests.swift; sourceTree = "<group>"; };
 		B4C049EC0025CA4FC60EF50C /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
 		B4E8DAF4BF3F77678728254B /* ApplicationSecurityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationSecurityView.swift; sourceTree = "<group>"; };
+		B86AB28766E1CF298DFE6D6C /* ReviewScopeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewScopeTests.swift; sourceTree = "<group>"; };
 		BA5E48D6EF8CE02640C2EB10 /* LocalMacOSUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalMacOSUpdateService.swift; sourceTree = "<group>"; };
 		BBC71304EFC7269714F1716E /* ApplicationUpdateServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationUpdateServiceTests.swift; sourceTree = "<group>"; };
 		BCE672907E656B0385C8971E /* PhotosLibrarySimilarPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosLibrarySimilarPhotosView.swift; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				F316939BB37173196F5DFDE9 /* PerformanceMenuLayoutTests.swift */,
 				1ED566B87A54887837271D36 /* PhotoLibraryScanTests.swift */,
 				7172672F2A1B51AC0D4FCD99 /* PrivacyPermissionReaderTests.swift */,
+				B86AB28766E1CF298DFE6D6C /* ReviewScopeTests.swift */,
 				592EE01DDA59787B3B85E2F6 /* SafeFileAccessTests.swift */,
 				FE1C48B2B8EA23F7C42D4B05 /* SavedScanFolderStoreTests.swift */,
 				7183EC41023799359D1E3DEF /* ScanExclusionsTests.swift */,
@@ -614,6 +617,7 @@
 				89ECCAEE92F7B96A2B3EB357 /* PerformanceMenuLayoutTests.swift in Sources */,
 				8CC87757E63F644C732D7CDA /* PhotoLibraryScanTests.swift in Sources */,
 				69523029C454FE707C0B0540 /* PrivacyPermissionReaderTests.swift in Sources */,
+				C28F4C5A026B18E17F923AE1 /* ReviewScopeTests.swift in Sources */,
 				42EFE8E99FE8701787EE5547 /* SafeFileAccessTests.swift in Sources */,
 				79C9542F6E55D6296C307D1E /* SavedScanFolderStoreTests.swift in Sources */,
 				F34A43883FCC2B9E5B153D52 /* ScanExclusionsTests.swift in Sources */,
@@ -732,7 +736,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 107;
+				CURRENT_PROJECT_VERSION = 108;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Mac Cleaner";
@@ -746,7 +750,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.5;
+				MARKETING_VERSION = 0.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.manateek1.MacCleaner;
 				SDKROOT = macosx;
 			};
@@ -893,7 +897,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 107;
+				CURRENT_PROJECT_VERSION = 108;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Mac Cleaner";
@@ -907,7 +911,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.5;
+				MARKETING_VERSION = 0.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.manateek1.MacCleaner;
 				SDKROOT = macosx;
 			};
@@ -1080,7 +1084,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 107;
+				CURRENT_PROJECT_VERSION = 108;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1095,7 +1099,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.5;
+				MARKETING_VERSION = 0.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.manateek1.MacCleaner;
 				SDKROOT = macosx;
 			};

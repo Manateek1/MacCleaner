@@ -875,7 +875,9 @@ struct ScanWorkspaceView: View {
                         Button("Close review") { model.closeReview() }.buttonStyle(.link)
                     }
                 } else {
-                    ScanResultList(model: model, result: result, initialLocation: initialLocation)
+                    ScanResultList(model: model, result: result, initialLocation: initialLocation, reviewKind: kind)
+                        .id(kind)
+                        .onAppear { model.clearSelection() }
                 }
             } else if !model.isScanning {
                 folderPrompt
@@ -1587,6 +1589,7 @@ private struct SpaceTreemap: View {
 private struct ScanResultList: View {
     @ObservedObject var model: ScanViewModel
     let result: ScanResult
+    let reviewKind: ScanKind
     let initialLocation: FindingLocation?
     @State private var searchText = ""
     @State private var categoryFilter: FindingCategory?
@@ -1597,13 +1600,16 @@ private struct ScanResultList: View {
     @State private var visibleItems: [ScanItem] = []
     @State private var visibleLimit = 500
     @State private var isFiltering = true
+    @State private var scopedCount = 0
+    @State private var scopedHasDuplicates = false
     @State private var categoryCounts: [FindingCategory: Int] = [:]
     @State private var locationCounts: [FindingLocation: Int] = [:]
     @State private var visiblePotentialBytes: Int64?
 
-    init(model: ScanViewModel, result: ScanResult, initialLocation: FindingLocation? = nil) {
+    init(model: ScanViewModel, result: ScanResult, initialLocation: FindingLocation? = nil, reviewKind: ScanKind = .smart) {
         self.model = model
         self.result = result
+        self.reviewKind = reviewKind
         self.initialLocation = initialLocation
         _locationFilter = State(initialValue: initialLocation)
     }
@@ -1623,7 +1629,7 @@ private struct ScanResultList: View {
             HStack {
                 Text("REVIEW FINDINGS").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(visibleItems.count.formatted()) shown of \(result.items.count.formatted()) · \(visiblePotentialBytes.map { $0.formattedByteCount } ?? "Calculating…") potential space to review")
+                Text("\(visibleItems.count.formatted()) shown of \(scopedCount.formatted()) · \(visiblePotentialBytes.map { $0.formattedByteCount } ?? "Calculating…") potential space to review")
                     .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 if !model.selectedPaths.isEmpty {
                     Text("\(model.selectedItems.count) selected · \(model.selectedBytes.formattedByteCount)")
@@ -1650,7 +1656,7 @@ private struct ScanResultList: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 340)
                 Picker("Category", selection: $categoryFilter) {
-                    Text("All categories (\(result.items.count))").tag(nil as FindingCategory?)
+                    Text("All categories (\(scopedCount))").tag(nil as FindingCategory?)
                     ForEach(FindingCategory.allCases) { category in
                         let count = categoryCounts[category] ?? 0
                         if count > 0 {
@@ -1676,7 +1682,7 @@ private struct ScanResultList: View {
                 .frame(width: 140)
                 .help("Group results by filename extension. Files without an extension are grouped together.")
                 Spacer()
-                Text(result.items.contains(where: { $0.duplicateGroupID != nil })
+                Text(scopedHasDuplicates
                      ? "Choose a copy to keep. Other accessible copies are checked for review; Trash requires confirmation."
                      : "Nothing moves until you confirm.")
                     .font(.caption2).foregroundStyle(.tertiary).lineLimit(3).multilineTextAlignment(.trailing)
@@ -1693,7 +1699,7 @@ private struct ScanResultList: View {
                         Button {
                             locationFilter = nil
                         } label: {
-                            Label("All locations · \(result.items.count)", systemImage: "externaldrive")
+                            Label("All locations · \(scopedCount)", systemImage: "externaldrive")
                         }
                         .buttonStyle(.bordered)
                         .tint(locationFilter == nil ? MacCleanerTheme.accent : Color.gray)
@@ -1772,22 +1778,29 @@ private struct ScanResultList: View {
         .sheet(item: $previewTarget) { target in
             QuickLookPreviewSheet(url: target.url)
         }
-        .task(id: result.finishedAt) {
+        .task(id: "\(result.finishedAt)::\(result.items.count)") {
             let items = result.items
             let homeDirectory = SafeFilePolicy.accountHome
-            let summary = await Task.detached(priority: .utility) { () -> ([FindingCategory: Int], [FindingLocation: Int]) in
+            let kind = reviewKind
+            let summary = await Task.detached(priority: .utility) { () -> ([FindingCategory: Int], [FindingLocation: Int], Int, Bool) in
                 var counts: [FindingCategory: Int] = [:]
                 var locations: [FindingLocation: Int] = [:]
-                for item in items {
+                var total = 0
+                var hasDuplicates = false
+                for item in items where kind.includesInReview(categories: item.categories) {
+                    total += 1
+                    hasDuplicates = hasDuplicates || item.duplicateGroupID != nil
                     for category in item.categories { counts[category, default: 0] += 1 }
                     let location = FindingLocation.classify(item.path, homeDirectory: homeDirectory)
                     locations[location, default: 0] += 1
                 }
-                return (counts, locations)
+                return (counts, locations, total, hasDuplicates)
             }.value
             guard !Task.isCancelled else { return }
             categoryCounts = summary.0
             locationCounts = summary.1
+            scopedCount = summary.2
+            scopedHasDuplicates = summary.3
         }
         .onChange(of: result.finishedAt) { _, _ in
             locationFilter = initialLocation
@@ -1798,6 +1811,7 @@ private struct ScanResultList: View {
             let items = result.items
             let query = searchText
             let category = categoryFilter
+            let kind = reviewKind
             let location = locationFilter
             let homeDirectory = SafeFilePolicy.accountHome
             let order = sortOrder
@@ -1811,7 +1825,7 @@ private struct ScanResultList: View {
                     let matchesLocation = location.map { $0.contains(item.path, homeDirectory: homeDirectory) } ?? true
                     let matchesSearch = query.isEmpty || item.name.localizedCaseInsensitiveContains(query)
                         || item.path.localizedCaseInsensitiveContains(query) || item.sourceApplication.localizedCaseInsensitiveContains(query)
-                    if matchesCategory && matchesLocation && matchesSearch {
+                    if kind.includesInReview(categories: item.categories) && matchesCategory && matchesLocation && matchesSearch {
                         matches.append(item)
                         if item.duplicateGroupID == nil || item.path != item.suggestedKeepPath { bytes += item.size }
                     }

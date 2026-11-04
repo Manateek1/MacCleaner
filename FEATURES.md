@@ -1,6 +1,6 @@
 # Feature status
 
-Mac Cleaner 0.5.5 build 107 builds on the first usable local-only beta
+Mac Cleaner 0.5.6 build 108 builds on the first usable local-only beta
 (0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
@@ -57,7 +57,9 @@ extensions, and browser messaging are outside the requested scope.
   same App Security review shown on its own page. It records aggregate results
   without storing app names or paths, and offers a direct link to the detailed
   review. Folder-specific scans do not run a Mac-wide App Security check.
-- Large and old files with configurable thresholds.
+- Large and old files with configurable thresholds. Specialized file-review pages
+  filter a saved Smart Scan to the current tool’s categories. Switching tools
+  clears the prior selection, and category totals update after cleanup.
 - Exact duplicate file detection using size grouping, partial hashes, and full
   streamed SHA-256; a saved oldest- or newest-modified suggestion is marked to
   keep, and users can choose a different copy to keep while other accessible
