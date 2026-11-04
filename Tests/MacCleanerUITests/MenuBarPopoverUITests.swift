@@ -13,7 +13,6 @@ final class MenuBarPopoverUITests: XCTestCase {
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "The sidebar should be available for navigation.")
         let windowFrame = window.frame
         let scrollBars = app.scrollBars.allElementsBoundByIndex
-        print("Sidebar navigation frames: window=\(windowFrame), sidebar=\(sidebar.frame), scrollBars=\(scrollBars.map { $0.frame })")
         guard let sidebarScrollBar = scrollBars.first(where: { bar in
             let frame = bar.frame
             return frame.width > 0 && frame.height > 0
@@ -24,7 +23,12 @@ final class MenuBarPopoverUITests: XCTestCase {
             XCTFail("The sidebar scroll bar should be inside the sidebar column. Scroll bars: \(scrollBars.map { $0.frame })")
             return
         }
-        let scrollDownTrack = sidebarScrollBar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+        // Keep the mouse target in the sidebar when detail screens add their own scroll bars.
+        let barFrame = sidebarScrollBar.frame
+        let scrollDownTrack = window.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: barFrame.midX - windowFrame.minX,
+            dy: min(barFrame.maxY, windowFrame.maxY) - windowFrame.minY - 12
+        ))
 
         let sections = [
             "overview",
