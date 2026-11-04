@@ -2230,6 +2230,8 @@ struct SettingsView: View {
     @State private var diagnosticsExported = false
     @State private var resetPreferencesConfirmationPresented = false
     @State private var preferencesReset = false
+    @State private var clearActivityConfirmationPresented = false
+    @AppStorage(ActivityStore.recordingPreferenceKey) private var activityRecordingEnabled = true
     @AppStorage(MacCleanerAppearancePreference.storageKey)
     private var appearance = MacCleanerAppearancePreference.defaultValue.rawValue
     @AppStorage(MenuBarPreferenceKey.cpu) private var menuBarCPU = true
@@ -2401,7 +2403,10 @@ struct SettingsView: View {
                 Label("Your scan notice is saved on this Mac. Full Disk Access is managed in System Settings and can be turned off there.", systemImage: "folder.badge.gearshape")
                 Label("Known credentials, sensitive app data, and cloud-synced folders are excluded from Smart Scan.", systemImage: "hand.raised")
                 Label("Scans are read-only. Cleanup moves selected files to Trash after a second confirmation.", systemImage: "trash.circle")
-                Label("Activity history stores summaries only, without file names or paths.", systemImage: "lock.shield")
+                Toggle("Save activity history", isOn: $activityRecordingEnabled)
+                Text("Save local summaries of scans, cleanup, and checks without file names or paths. Turning this off stops new entries and keeps existing history.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("Clear activity history…") { clearActivityConfirmationPresented = true }
                 if let onShowPermissions {
                     Button("Review Privacy & Permissions", action: onShowPermissions)
                 }
@@ -2577,6 +2582,12 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("This changes appearance, file-review settings, favorites, notification choices, process list size, and menu-bar readings. Full Disk Access, exclusions, saved scan folders, activity history, and files will not change.")
+        }
+        .confirmationDialog("Clear activity history?", isPresented: $clearActivityConfirmationPresented, titleVisibility: .visible) {
+            Button("Clear History", role: .destructive) { model.activity.clearHistory() }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This permanently removes recorded activity summaries from this Mac. Your saved scan review and files stay unchanged.")
         }
         .sheet(isPresented: $showSetupGuide) {
             SetupGuideView(model: model, onScanStarted: {

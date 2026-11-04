@@ -1,6 +1,6 @@
 # Feature status
 
-Mac Cleaner 0.5.6 build 109 builds on the first usable local-only beta
+Mac Cleaner 0.5.7 build 110 builds on the first usable local-only beta
 (0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
@@ -179,7 +179,9 @@ extensions, and browser messaging are outside the requested scope.
   to Trash after confirmation.
 - Space Lens selection, Finder reveal, and storage refresh controls expose
   descriptive labels to VoiceOver.
-- Local activity summaries without file names or paths.
+- Local activity summaries without file names or paths. Settings can stop saving
+  new summaries while preserving existing history, or clear history after a
+  separate confirmation. Clearing history preserves scan reviews and files.
 - Device Backups reviews folders in the current account's standard local
   iPhone/iPad backup location. It shows folder names, file counts, logical
   sizes, and the newest file-modified date without opening backup contents.

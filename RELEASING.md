@@ -12,7 +12,7 @@ workflow remains separate.
 1. Merge the app changes to `main` after its macOS checks pass.
 2. In **Actions → Mac Cleaner developer preview**, run the workflow from `main` and
    enter a unique preview tag matching the app version, such as
-   `v0.5.6-preview.1`.
+   `v0.5.7-preview.1`.
 3. The workflow runs core checks, unit and UI tests, archives the Tahoe/Apple
    silicon app, adds an ad-hoc signature, and verifies the ZIP checksum. It
    does not use an Apple Developer ID or notarize the app.
@@ -52,8 +52,8 @@ changes.
 
 1. Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `Project.yml`.
 2. Merge the change to `main` after its macOS checks pass.
-3. Create and push a matching version tag, such as `v0.5.6` for app version
-   `0.5.6`.
+3. Create and push a matching version tag, such as `v0.5.7` for app version
+   `0.5.7`.
 4. In **Actions → Signed macOS release**, run the workflow from `main` and enter
    that tag. The build job checks that the tag points to a commit on `main`, then
    runs core checks, unit and UI tests, and an unsigned Tahoe/Apple silicon
