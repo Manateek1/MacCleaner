@@ -43,9 +43,11 @@ final class MenuBarPopoverUITests: XCTestCase {
                 if sidebarButton.exists && sidebarButton.isHittable {
                     break
                 }
+                sidebar.click()
                 sidebar.typeKey(.pageDown, modifierFlags: [])
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
+            if !sidebarButton.isHittable { print(app.debugDescription) }
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
             sidebarButton.click()
 
