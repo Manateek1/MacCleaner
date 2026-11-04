@@ -11,24 +11,6 @@ final class MenuBarPopoverUITests: XCTestCase {
         XCTAssertTrue(window.waitForExistence(timeout: 5), "The main window should be available for navigation.")
         let sidebar = app.outlines["sidebar-navigation"]
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "The sidebar should be available for navigation.")
-        let windowFrame = window.frame
-        let scrollBars = app.scrollBars.allElementsBoundByIndex
-        guard let sidebarScrollBar = scrollBars.first(where: { bar in
-            let frame = bar.frame
-            return frame.width > 0 && frame.height > 0
-                && frame.midX < windowFrame.minX + 350
-                && frame.maxY > windowFrame.minY
-                && frame.minY < windowFrame.maxY
-        }) else {
-            XCTFail("The sidebar scroll bar should be inside the sidebar column. Scroll bars: \(scrollBars.map { $0.frame })")
-            return
-        }
-        // Keep the mouse target in the sidebar when detail screens add their own scroll bars.
-        let barFrame = sidebarScrollBar.frame
-        let scrollDownTrack = window.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-            dx: barFrame.midX - windowFrame.minX,
-            dy: min(barFrame.maxY, windowFrame.maxY) - windowFrame.minY - 12
-        ))
 
         let sections = [
             "overview",
@@ -61,7 +43,7 @@ final class MenuBarPopoverUITests: XCTestCase {
                 if sidebarButton.exists && sidebarButton.isHittable {
                     break
                 }
-                scrollDownTrack.click()
+                sidebar.typeKey(.pageDown, modifierFlags: [])
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
