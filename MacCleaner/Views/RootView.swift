@@ -733,7 +733,9 @@ struct ScanWorkspaceView: View {
                         ProgressView()
                             .controlSize(.small)
                             .tint(MacCleanerTheme.accent)
-                        Text("\(model.progress.stage) · \(model.progress.entriesVisited.formatted()) items checked · \(model.progress.filesVisited.formatted()) files inspected · \(model.progress.bytesVisited.formattedByteCount)")
+                        let checkedEntries = model.progress.entriesVisited > 0
+                            ? " · \(model.progress.entriesVisited.formatted()) items checked" : ""
+                        Text("\(model.progress.stage)\(checkedEntries) · \(model.progress.filesVisited.formatted()) files inspected · \(model.progress.bytesVisited.formattedByteCount)")
                             .font(.callout.monospacedDigit())
                             .foregroundStyle(MacCleanerTheme.secondaryText)
                         Spacer()
