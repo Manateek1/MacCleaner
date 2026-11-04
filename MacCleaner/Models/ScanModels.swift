@@ -233,12 +233,14 @@ enum DuplicateKeepSelection {
         in group: [ScanItem],
         keepingPath: String,
         from existingSelection: Set<String>,
-        eligiblePaths: Set<String>
+        eligiblePaths: Set<String>,
+        reviewedPaths: Set<String>? = nil
     ) -> Set<String> {
         guard group.contains(where: { $0.path == keepingPath }) else { return existingSelection }
         let groupPaths = Set(group.map(\.path))
         var selection = existingSelection.subtracting(groupPaths)
-        for item in group where item.path != keepingPath && eligiblePaths.contains(item.path) {
+        for item in group where item.path != keepingPath && eligiblePaths.contains(item.path)
+            && (reviewedPaths?.contains(item.path) ?? true) {
             selection.insert(item.path)
         }
         return selection

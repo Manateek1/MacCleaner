@@ -1,6 +1,6 @@
 # Feature status
 
-Mac Cleaner 0.5.6 build 108 builds on the first usable local-only beta
+Mac Cleaner 0.5.6 build 109 builds on the first usable local-only beta
 (0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
@@ -63,7 +63,7 @@ extensions, and browser messaging are outside the requested scope.
 - Exact duplicate file detection using size grouping, partial hashes, and full
   streamed SHA-256; a saved oldest- or newest-modified suggestion is marked to
   keep, and users can choose a different copy to keep while other accessible
-  copies are checked for review. Hard-linked files are excluded.
+  copies currently shown are checked for review. Hard-linked files are excluded.
 - Conservative cache/log and AI-tool cache candidate rules. The default Xcode
   Derived Data, Simulator, Homebrew, pip, and npm caches are identified by tool
   and get specific plain-language explanations. Xcode archives, Simulator

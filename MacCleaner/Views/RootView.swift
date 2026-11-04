@@ -1600,7 +1600,7 @@ private struct ScanResultList: View {
     @State private var visibleItems: [ScanItem] = []
     @State private var visibleLimit = 500
     @State private var isFiltering = true
-    @State private var scopedCount = 0
+    @State private var scopedCount: Int?
     @State private var scopedHasDuplicates = false
     @State private var categoryCounts: [FindingCategory: Int] = [:]
     @State private var locationCounts: [FindingLocation: Int] = [:]
@@ -1629,7 +1629,7 @@ private struct ScanResultList: View {
             HStack {
                 Text("REVIEW FINDINGS").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(visibleItems.count.formatted()) shown of \(scopedCount.formatted()) · \(visiblePotentialBytes.map { $0.formattedByteCount } ?? "Calculating…") potential space to review")
+                Text("\(visibleItems.count.formatted()) shown of \((scopedCount.map { $0.formatted() } ?? "…")) · \(visiblePotentialBytes.map { $0.formattedByteCount } ?? "Calculating…") potential space to review")
                     .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 if !model.selectedPaths.isEmpty {
                     Text("\(model.selectedItems.count) selected · \(model.selectedBytes.formattedByteCount)")
@@ -1656,7 +1656,7 @@ private struct ScanResultList: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 340)
                 Picker("Category", selection: $categoryFilter) {
-                    Text("All categories (\(scopedCount))").tag(nil as FindingCategory?)
+                    Text("All categories (\(scopedCount.map { $0.formatted() } ?? "…"))").tag(nil as FindingCategory?)
                     ForEach(FindingCategory.allCases) { category in
                         let count = categoryCounts[category] ?? 0
                         if count > 0 {
@@ -1683,7 +1683,7 @@ private struct ScanResultList: View {
                 .help("Group results by filename extension. Files without an extension are grouped together.")
                 Spacer()
                 Text(scopedHasDuplicates
-                     ? "Choose a copy to keep. Other accessible copies are checked for review; Trash requires confirmation."
+                     ? "Choose a copy to keep. Other accessible copies currently shown are checked for review; Trash requires confirmation."
                      : "Nothing moves until you confirm.")
                     .font(.caption2).foregroundStyle(.tertiary).lineLimit(3).multilineTextAlignment(.trailing)
                     .frame(maxWidth: 320, alignment: .trailing)
@@ -1699,7 +1699,7 @@ private struct ScanResultList: View {
                         Button {
                             locationFilter = nil
                         } label: {
-                            Label("All locations · \(scopedCount)", systemImage: "externaldrive")
+                            Label("All locations · \(scopedCount.map { $0.formatted() } ?? "…")", systemImage: "externaldrive")
                         }
                         .buttonStyle(.bordered)
                         .tint(locationFilter == nil ? MacCleanerTheme.accent : Color.gray)
@@ -1906,7 +1906,7 @@ private struct ScanResultList: View {
                             : nil))),
             isDuplicateKeeper: keeperPath == item.path,
             isSuggestedKeeper: model.isSuggestedDuplicateKeeper(for: item),
-            chooseAsKeeper: { model.chooseDuplicateKeeper(for: item) },
+            chooseAsKeeper: { model.chooseDuplicateKeeper(for: item, among: visibleItems) },
             preview: {
                 if item.isCloudManaged == true,
                    !ICloudDesktopPolicy.isAvailableForReadOnlyPreview(item.url) {
