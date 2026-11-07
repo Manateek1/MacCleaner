@@ -23,7 +23,7 @@ struct MacCleanerApp: App {
     var body: some Scene {
         WindowGroup("Mac Cleaner", id: "main") {
             RootView(model: model, monitor: systemMonitor, navigation: navigation)
-                .frame(minWidth: 980, minHeight: 680)
+                .frame(minWidth: 980, minHeight: 600)
                 .tint(MacCleanerTheme.accent)
                 .preferredColorScheme(preferredColorScheme)
         }

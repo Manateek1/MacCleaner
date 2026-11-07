@@ -19,6 +19,16 @@ enum ScanKind: String, CaseIterable, Codable, Identifiable, Sendable {
         }
     }
 
+    func includesInReview(categories: [FindingCategory]) -> Bool {
+        switch self {
+        case .smart: return true
+        case .largeAndOld: return categories.contains(.largeFile) || categories.contains(.oldFile)
+        case .duplicates: return categories.contains(.exactDuplicate)
+        case .junk: return categories.contains(.cacheCandidate)
+        case .aiClutter: return categories.contains(.aiCacheCandidate)
+        }
+    }
+
     var subtitle: String {
         switch self {
         case .smart: "Find files worth reviewing. A full Mac scan also checks app signatures and startup items."
@@ -223,12 +233,14 @@ enum DuplicateKeepSelection {
         in group: [ScanItem],
         keepingPath: String,
         from existingSelection: Set<String>,
-        eligiblePaths: Set<String>
+        eligiblePaths: Set<String>,
+        reviewedPaths: Set<String>? = nil
     ) -> Set<String> {
         guard group.contains(where: { $0.path == keepingPath }) else { return existingSelection }
         let groupPaths = Set(group.map(\.path))
         var selection = existingSelection.subtracting(groupPaths)
-        for item in group where item.path != keepingPath && eligiblePaths.contains(item.path) {
+        for item in group where item.path != keepingPath && eligiblePaths.contains(item.path)
+            && (reviewedPaths?.contains(item.path) ?? true) {
             selection.insert(item.path)
         }
         return selection

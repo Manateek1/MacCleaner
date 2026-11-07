@@ -1,9 +1,27 @@
 # Releasing Mac Cleaner
 
-GitHub Releases publishes an Apple silicon `.zip` for macOS Tahoe 26 and later
-only after tests pass, the app is signed with Developer ID, Apple's notarization
-service accepts it, and Gatekeeper assessment succeeds. Local development builds
-are not release downloads.
+GitHub Releases can publish a tested developer-preview ZIP for Apple silicon
+Macs running macOS Tahoe 26 or later. The app is ad-hoc signed but has no
+Developer ID signature and is not notarized; Gatekeeper may warn about or block
+it. A frictionless public release requires Developer ID signing, Apple
+notarization, and a successful Gatekeeper assessment; the signed release
+workflow remains separate.
+
+## Publishing an ad-hoc signed preview
+
+1. Merge the app changes to `main` after its macOS checks pass.
+2. In **Actions → Mac Cleaner developer preview**, run the workflow from `main` and
+   enter a unique preview tag matching the app version, such as
+   `v0.5.7-preview.1`.
+3. The workflow runs core checks, unit and UI tests, archives the Tahoe/Apple
+   silicon app, adds an ad-hoc signature, and verifies the ZIP checksum. It
+   does not use an Apple Developer ID or notarize the app.
+4. After all checks pass, GitHub publishes a marked prerelease with the ZIP, its
+   checksum, and the tested source commit. The repository's Releases page is the
+   stable link for downloading the current preview.
+
+The preview does not remove or bypass macOS Gatekeeper. Do not describe it as a
+notarized or easy-install release.
 
 ## One-time maintainer setup
 
@@ -34,8 +52,8 @@ changes.
 
 1. Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `Project.yml`.
 2. Merge the change to `main` after its macOS checks pass.
-3. Create and push a matching version tag, such as `v0.5.4` for app version
-   `0.5.4`.
+3. Create and push a matching version tag, such as `v0.5.7` for app version
+   `0.5.7`.
 4. In **Actions → Signed macOS release**, run the workflow from `main` and enter
    that tag. The build job checks that the tag points to a commit on `main`, then
    runs core checks, unit and UI tests, and an unsigned Tahoe/Apple silicon
