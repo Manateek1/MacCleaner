@@ -24,4 +24,16 @@ final class FullDiskAccessProbeTests: XCTestCase {
 
         XCTAssertTrue(FullDiskAccessProbe.hasAccess(homeDirectory: home, openDirectory: { _ in true }))
     }
+
+    func testDoesNotFollowSymlinkedDocumentsOrDownloadsFolders() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let target = home.appendingPathComponent("Target", isDirectory: true)
+        let documents = home.appendingPathComponent("Documents", isDirectory: true)
+        let downloads = home.appendingPathComponent("Downloads", isDirectory: true)
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: documents, withDestinationURL: target)
+        try FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
+
+        XCTAssertFalse(FullDiskAccessProbe.hasAccess(homeDirectory: home))
+    }
 }

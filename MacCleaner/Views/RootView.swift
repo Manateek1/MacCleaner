@@ -826,7 +826,7 @@ struct ScanWorkspaceView: View {
                         .font(.caption)
                     }
                     if result.skippedItems > 0 {
-                        DisclosureGroup("Review \(result.skippedItems.formatted()) locations the scan could not open") {
+                        DisclosureGroup("Review \(result.skippedItems.formatted()) locations the scan did not check") {
                             VStack(alignment: .leading, spacing: 4) {
                                 ForEach(Array(result.displayedSkippedLocations.enumerated()), id: \.offset) { _, path in
                                     Text(path).font(.caption.monospaced()).textSelection(.enabled)
@@ -885,20 +885,14 @@ struct ScanWorkspaceView: View {
                 Spacer()
             }
         }
-        .confirmationDialog(
-            "Move selected items to Trash?",
-            isPresented: $model.trashConfirmationPresented,
-            titleVisibility: .visible
-        ) {
-            Button("Move \(model.selectedItems.count) Items to Trash", role: .destructive) {
+        .sheet(isPresented: $model.trashConfirmationPresented) {
+            TrashReviewSheet(
+                items: model.selectedItems,
+                totalBytes: model.selectedBytes,
+                needsExtraConfirmation: model.selectedNeedsExtraConfirmation
+            ) {
+                model.trashConfirmationPresented = false
                 model.moveSelectedToTrash()
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            if model.selectedNeedsExtraConfirmation {
-                Text("\(model.selectedItems.count) selected items (\(model.selectedBytes.formattedByteCount)) include personal files or items that may have changed. Review paths above; protected or changed files will be blocked. Eligible files move to Trash and remain recoverable there.")
-            } else {
-                Text("\(model.selectedItems.count) selected items (\(model.selectedBytes.formattedByteCount)) will be moved to Trash. Nothing will be permanently deleted.")
             }
         }
     }
@@ -1586,6 +1580,65 @@ private struct SpaceTreemap: View {
     }
 }
 
+private struct TrashReviewSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let items: [ScanItem]
+    let totalBytes: Int64
+    let needsExtraConfirmation: Bool
+    let onMoveToTrash: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Review files going to Trash")
+                    .font(.title2.weight(.semibold))
+                Text("\(items.count) selected · \(totalBytes.formattedByteCount). Check every name and location before continuing.")
+                    .foregroundStyle(.secondary)
+                if needsExtraConfirmation {
+                    Label("Some files may be personal or have changed. Mac Cleaner rechecks each one before moving it.", systemImage: "exclamationmark.triangle")
+                        .font(.callout)
+                        .foregroundStyle(.orange)
+                } else {
+                    Label("Nothing is permanently deleted. Confirmed files go to your Mac’s Trash.", systemImage: "trash")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            List(items.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }) { item in
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(item.name).font(.body.weight(.medium))
+                        Spacer()
+                        Text(item.size.formattedByteCount)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(item.path)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                .padding(.vertical, 4)
+            }
+            .listStyle(.inset)
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Move \(items.count) \(items.count == 1 ? "File" : "Files") to Trash", role: .destructive) {
+                    onMoveToTrash()
+                    dismiss()
+                }
+                .disabled(items.isEmpty)
+            }
+        }
+        .padding(22)
+        .frame(minWidth: 620, minHeight: 520)
+    }
+}
+
 private struct ScanResultList: View {
     @ObservedObject var model: ScanViewModel
     let result: ScanResult
@@ -1635,10 +1688,10 @@ private struct ScanResultList: View {
                     Text("\(model.selectedItems.count) selected · \(model.selectedBytes.formattedByteCount)")
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
-                Button("Select low-risk shown") { model.selectAllEligible(from: visibleItems) }
+                Button("Select low-risk visible") { model.selectAllEligible(from: renderedItems) }
                     .buttonStyle(.link)
                     .disabled(model.isCleaning || isFiltering)
-                    .help("Select only low-risk temporary files currently shown by the search and filters.")
+                    .help("Select only low-risk temporary files on the rows currently visible on this page.")
                 Button("Clear") { model.clearSelection() }.buttonStyle(.link).disabled(model.selectedPaths.isEmpty || model.isCleaning)
                 Button("Close review") { model.closeReview() }.buttonStyle(.link).disabled(model.isCleaning)
                 Button {
@@ -1887,6 +1940,10 @@ private struct ScanResultList: View {
             remaining -= visibleGroupItems.count
         }
         return groups
+    }
+
+    private var renderedItems: [ScanItem] {
+        groupByFileType ? visibleFileTypeGroups.flatMap(\.items) : Array(visibleItems.prefix(visibleLimit))
     }
 
     private func findingRow(_ item: ScanItem) -> some View {

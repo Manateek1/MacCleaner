@@ -139,6 +139,8 @@ struct FileScanner: ScanServicing {
     private let maximumEntries: Int
     private let directoryOpeners: ScanDirectoryOpeners
     private let externalVolumeProvider: @Sendable (URL) -> [URL]
+    private let localVolumeCheck: @Sendable (URL) -> Bool
+    private let deviceIdentifierProvider: @Sendable (String) -> UInt64?
     static let directoryOpener = TimedDirectoryOpener()
     static let iCloudDesktopDirectoryOpener = TimedDirectoryOpener(maxConcurrentOpens: 1)
 
@@ -148,12 +150,16 @@ struct FileScanner: ScanServicing {
         directoryOpeners: ScanDirectoryOpeners = .shared,
         externalVolumeProvider: @escaping @Sendable (URL) -> [URL] = { root in
             FileScanner.discoverExternalVolumeRoots(root)
-        }
+        },
+        localVolumeCheck: @escaping @Sendable (URL) -> Bool = { SafeFilePolicy.isLocalVolume($0) },
+        deviceIdentifierProvider: @escaping @Sendable (String) -> UInt64? = { path in FileScanner.deviceIdentifier(path) }
     ) {
         self.accountHome = accountHome.standardizedFileURL
         self.maximumEntries = max(1, maximumEntries)
         self.directoryOpeners = directoryOpeners
         self.externalVolumeProvider = externalVolumeProvider
+        self.localVolumeCheck = localVolumeCheck
+        self.deviceIdentifierProvider = deviceIdentifierProvider
     }
 
     func scan(
@@ -162,6 +168,8 @@ struct FileScanner: ScanServicing {
     ) async throws -> ScanResult {
         progress(ScanProgress(stage: "Preparing scan", filesVisited: 0, bytesVisited: 0, entriesVisited: 0))
         let externalVolumeProvider = self.externalVolumeProvider
+        let localVolumeCheck = self.localVolumeCheck
+        let deviceIdentifierProvider = self.deviceIdentifierProvider
         let operation = Task.detached(priority: .utility) {
             try Self.scanSynchronously(
                 request,
@@ -169,6 +177,8 @@ struct FileScanner: ScanServicing {
                 maximumEntries: maximumEntries,
                 directoryOpeners: directoryOpeners,
                 externalVolumeProvider: externalVolumeProvider,
+                localVolumeCheck: localVolumeCheck,
+                deviceIdentifierProvider: deviceIdentifierProvider,
                 progress: progress
             )
         }
@@ -210,6 +220,8 @@ struct FileScanner: ScanServicing {
         maximumEntries: Int,
         directoryOpeners: ScanDirectoryOpeners,
         externalVolumeProvider: @Sendable (URL) -> [URL],
+        localVolumeCheck: @Sendable (URL) -> Bool,
+        deviceIdentifierProvider: @Sendable (String) -> UInt64?,
         progress: @escaping @Sendable (ScanProgress) -> Void
     ) throws -> ScanResult {
         progress(ScanProgress(stage: "Opening scan folder", filesVisited: 0, bytesVisited: 0, entriesVisited: 0))
@@ -225,6 +237,7 @@ struct FileScanner: ScanServicing {
         guard !SafeFilePolicy.isEssentialSystemLocation(root.path) else {
             throw ScanError.protectedFolder
         }
+        guard localVolumeCheck(root) else { throw ScanError.nonLocalVolume }
         progress(ScanProgress(stage: "Checking repository protection", filesVisited: 0, bytesVisited: 0, entriesVisited: 0))
         guard !SafeFilePolicy.isInsideDevelopmentRepository(root.path, homeDirectory: accountHome) else {
             throw ScanError.protectedRepository
@@ -296,11 +309,14 @@ struct FileScanner: ScanServicing {
         var entriesVisited = 0
         for scanRoot in scanRoots {
             try Task.checkCancellation()
-            guard isDirectory(scanRoot.path) else {
+            guard isDirectory(scanRoot.path),
+                  localVolumeCheck(scanRoot),
+                  let scanRootDevice = deviceIdentifierProvider(scanRoot.path) else {
                 skipped += 1
                 if skippedLocations.count < 50 { skippedLocations.append(scanRoot.path) }
                 continue
             }
+            var volumeLocalityByDevice: [UInt64: Bool] = [scanRootDevice: true]
             var pendingDirectories = [scanRoot]
             var directoriesVisited = 0
             while let directory = pendingDirectories.popLast() {
@@ -316,6 +332,23 @@ struct FileScanner: ScanServicing {
                       !SafeFilePolicy.shouldSkipDirectory(directory.path, homeDirectory: accountHome) else {
                     continue
                 }
+                guard let directoryDevice = deviceIdentifierProvider(directory.path) else {
+                    skipped += 1
+                    if skippedLocations.count < 50 { skippedLocations.append(directory.path) }
+                    continue
+                }
+                let isLocalDirectory: Bool
+                if let cachedLocality = volumeLocalityByDevice[directoryDevice] {
+                    isLocalDirectory = cachedLocality
+                } else {
+                    isLocalDirectory = localVolumeCheck(directory)
+                    volumeLocalityByDevice[directoryDevice] = isLocalDirectory
+                }
+                guard isLocalDirectory else {
+                    skipped += 1
+                    if skippedLocations.count < 50 { skippedLocations.append(directory.path) }
+                    continue
+                }
 
                 if let cloudDesktopRoot,
                    ICloudDesktopPolicy.contains(directory, inside: cloudDesktopRoot) {
@@ -327,6 +360,8 @@ struct FileScanner: ScanServicing {
                         excludedPaths: excludedPaths,
                         maximumEntries: remainingEntries,
                         directoryOpeners: directoryOpeners,
+                        localVolumeCheck: localVolumeCheck,
+                        deviceIdentifierProvider: deviceIdentifierProvider,
                         baseFileCount: records.count,
                         baseBytes: bytes,
                         baseEntries: entriesVisited,
@@ -550,6 +585,8 @@ struct FileScanner: ScanServicing {
         excludedPaths: [String],
         maximumEntries: Int,
         directoryOpeners: ScanDirectoryOpeners,
+        localVolumeCheck: @Sendable (URL) -> Bool,
+        deviceIdentifierProvider: @Sendable (String) -> UInt64?,
         baseFileCount: Int,
         baseBytes: Int64,
         baseEntries: Int,
@@ -566,6 +603,7 @@ struct FileScanner: ScanServicing {
             .ubiquitousItemIsDownloadingKey
         ]
         let desktopRootPath = directory.standardizedFileURL.path
+        var volumeLocalityByDevice: [UInt64: Bool] = [:]
 
         var pendingDirectories = [directory]
         while let currentDirectory = pendingDirectories.popLast() {
@@ -586,6 +624,23 @@ struct FileScanner: ScanServicing {
             }
             guard !isPackageDirectory(currentDirectory),
                   !SafeFilePolicy.shouldSkipDirectory(currentPath, homeDirectory: accountHome) else { continue }
+            guard let currentDevice = deviceIdentifierProvider(currentPath) else {
+                result.skippedItems += 1
+                if result.skippedLocations.count < 50 { result.skippedLocations.append(currentPath) }
+                continue
+            }
+            let isLocalDirectory: Bool
+            if let cachedLocality = volumeLocalityByDevice[currentDevice] {
+                isLocalDirectory = cachedLocality
+            } else {
+                isLocalDirectory = localVolumeCheck(currentDirectory)
+                volumeLocalityByDevice[currentDevice] = isLocalDirectory
+            }
+            guard isLocalDirectory else {
+                result.skippedItems += 1
+                if result.skippedLocations.count < 50 { result.skippedLocations.append(currentPath) }
+                continue
+            }
 
             if currentPath != desktopRootPath {
                 guard let directoryValues = try? currentDirectory.resourceValues(forKeys: resourceKeys) else {
@@ -1076,6 +1131,7 @@ enum ScanError: LocalizedError, Equatable {
     case cannotReadFolder
     case protectedFolder
     case protectedRepository
+    case nonLocalVolume
     case excludedFolder(String)
 
     var errorDescription: String? {
@@ -1084,6 +1140,7 @@ enum ScanError: LocalizedError, Equatable {
         case .cannotReadFolder: "Mac Cleaner could not enumerate that folder. Check its permissions and try again."
         case .protectedFolder: "This is an essential macOS location. Choose a user folder or an external volume instead."
         case .protectedRepository: "This folder is inside a Git, Mercurial, or Subversion repository. Project files are protected from cleanup."
+        case .nonLocalVolume: "Mac Cleaner only scans local drives. Choose a folder stored on this Mac or a connected local drive."
         case .excludedFolder(let path): "This folder is excluded in Settings: \(path). Remove that exclusion before scanning it."
         }
     }

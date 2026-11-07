@@ -233,11 +233,19 @@ enum SafeFilePolicy {
         return !lowRiskOnly || isPersonal
     }
 
-    static func assess(_ item: ScanItem, inside rootURL: URL, homeDirectory: URL = accountHome) -> SafetyAssessment {
+    static func assess(
+        _ item: ScanItem,
+        inside rootURL: URL,
+        homeDirectory: URL = accountHome,
+        localVolumeCheck: @Sendable (URL) -> Bool = { SafeFilePolicy.isLocalVolume($0) }
+    ) -> SafetyAssessment {
         let requestedRoot = rootURL.standardizedFileURL.path
         let root = SafeFileAccess.canonicalDirectoryPath(requestedRoot) ?? requestedRoot
         let path = URL(fileURLWithPath: item.path).standardizedFileURL.path
         guard isInside(path, root: root) else { return .protected("The item is outside the folder selected for this scan.") }
+        guard localVolumeCheck(URL(fileURLWithPath: path)) else {
+            return .protected("Files on network volumes are outside the local scan and cleanup scope.")
+        }
         guard item.isCloudManaged != true else {
             return .protected("This iCloud Drive item is view-only because moving it could sync the change to your other devices.")
         }
@@ -259,6 +267,11 @@ enum SafeFilePolicy {
         guard current == item.identity else { return .protected("The file changed since scanning. Scan again before cleanup.") }
         guard current.linkCount == 1 else { return .protected("This file has hard links, so recoverable space cannot be estimated safely.") }
         return .allowed(requiresExtraConfirmation: requiresExtraConfirmation(path: path, categories: item.categories))
+    }
+
+    static func isLocalVolume(_ url: URL) -> Bool {
+        guard let values = try? url.resourceValues(forKeys: [.volumeIsLocalKey]) else { return false }
+        return values.volumeIsLocal == true
     }
 
     static func hasCurrentDuplicateSurvivor(
