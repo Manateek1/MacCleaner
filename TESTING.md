@@ -9,8 +9,11 @@ Trash.
 
 Navigation tests verify that the nine numbered shortcuts are unique and map in
 order, and that the shared navigation model changes sections as expected.
-The menu-bar panel layout test measures the hosted SwiftUI view and guards
-against a collapsed, one-line window by requiring its intended minimum size.
+Hosted UI tests navigate through all 22 primary sidebar sections and verify
+that the menu-bar icon opens a visible System Monitor panel with CPU and storage
+cards. The menu-bar panel layout test also measures the hosted SwiftUI view and
+guards against a collapsed, one-line window by requiring its intended minimum
+size.
 
 Run with:
 
@@ -129,19 +132,18 @@ entries, and ignoring unknown section IDs.
 Manual UI verification confirmed that search filters tools and a newly pinned
 favorite remains in the shortcuts after navigating away and back.
 
-The XCTest suite uses Xcode's test runner. The GitHub Actions workflow runs it
-on a macOS runner.
+The XCTest suite uses Xcode's test runner. GitHub Actions tests on the stable
+macOS Tahoe 26 runner and the preview macOS 27 runner (`xcode-27`). The release
+archive remains built on Tahoe 26 for the declared minimum OS.
 
-On Nov 2, 2026, Mac Cleaner 0.5.4 build 106 passed all 323 XCTest unit tests
-with 0 failures on macOS Tahoe 26.6.2 arm64. All 23 standalone core checks also
-passed, including the 10,000-file stress scan (5.73 seconds while another
-whole-Mac scan was running). The arm64 Release
-build and Xcode static analyzer passed locally. A separate local menu-bar UI
-test could not initialize because Xcode timed out while enabling automation
-mode, so its UI actions did not run on this host. The earlier 0.5.3 menu-bar UI
-test passed in CI; CI for the current change must run before release. GitHub
-Actions runs the release gate on Apple silicon macOS 26; Intel and earlier
-macOS versions are out of scope.
+On Nov 7, 2026, Mac Cleaner 0.5.7 build 110 passed the GitHub macOS 26 release
+gate (run 42411613124): 329 unit tests, both hosted UI tests, all 23 standalone
+core checks (including the 10,000-file stress scan), and Xcode static analysis.
+The UI suite reached all 22 sidebar sections and confirmed the menu-bar panel
+shows its title, CPU card, and storage card. GitHub Actions is also validating
+the same suite on macOS 27; that result is tracked by the current follow-up PR.
+Intel and macOS versions earlier than Tahoe 26 remain outside the product
+support target.
 
 ## Manual checks performed
 
