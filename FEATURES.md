@@ -548,9 +548,10 @@ extensions, and browser messaging are outside the requested scope.
 ### Phase 5: broader QA and distribution
 
 - Hosted UI checks now navigate all 22 primary sidebar sections and verify the
-  menu-bar monitor is visible. VoiceOver and keyboard-only selection/cleanup,
-  broader light/dark and resizing coverage, and live large-tree/performance
-  runs on physical Tahoe-and-later Macs remain future QA.
+  menu-bar monitor is visible. The follow-up adds a Command-8 keyboard
+  navigation check. VoiceOver and keyboard-only selection/cleanup, broader
+  light/dark and resizing coverage, and live large-tree/performance runs on
+  physical Tahoe-and-later Macs remain future QA.
 - The developer-preview workflow builds and tests an arm64 app on macOS 26,
   ad-hoc signs the app bundle, and publishes a checksum-verified GitHub
   prerelease without Apple credentials. The app is not Developer ID signed or

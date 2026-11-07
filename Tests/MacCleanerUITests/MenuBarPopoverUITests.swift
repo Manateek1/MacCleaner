@@ -72,4 +72,20 @@ final class MenuBarPopoverUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["CPU"].exists, "The panel should show a live CPU card instead of an empty strip.")
         XCTAssertTrue(app.staticTexts["Storage"].exists, "The panel should show storage information without scrolling.")
     }
+
+    @MainActor
+    func testCommandEightOpensPrivacyPermissions() {
+        let app = XCUIApplication(bundleIdentifier: "com.manateek1.MacCleaner")
+        app.launchArguments += ["-MacCleaner.scanNoticeAcceptedVersion", "4"]
+        app.launch()
+
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 5), "The main window should be available for keyboard navigation.")
+        window.typeKey("8", modifierFlags: .command)
+
+        let content = app.descendants(matching: .any)
+            .matching(identifier: "section-content-permissions")
+            .firstMatch
+        XCTAssertTrue(content.waitForExistence(timeout: 5), "Command-8 should open Privacy & Permissions.")
+    }
 }

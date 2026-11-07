@@ -11,9 +11,10 @@ Navigation tests verify that the nine numbered shortcuts are unique and map in
 order, and that the shared navigation model changes sections as expected.
 Hosted UI tests navigate through all 22 primary sidebar sections and verify
 that the menu-bar icon opens a visible System Monitor panel with CPU and storage
-cards. The menu-bar panel layout test also measures the hosted SwiftUI view and
-guards against a collapsed, one-line window by requiring its intended minimum
-size.
+cards. The current follow-up adds a keyboard smoke test for Command-8 navigation
+to Privacy & Permissions. The menu-bar panel layout test also measures the
+hosted SwiftUI view and guards against a collapsed, one-line window by
+requiring its intended minimum size.
 
 Run with:
 
@@ -141,7 +142,8 @@ gate (run 42411613124): 329 unit tests, both hosted UI tests, all 23 standalone
 core checks (including the 10,000-file stress scan), and Xcode static analysis.
 The UI suite reached all 22 sidebar sections and confirmed the menu-bar panel
 shows its title, CPU card, and storage card. GitHub Actions is also validating
-the same suite on macOS 27; that result is tracked by the current follow-up PR.
+the same suite on macOS 27 and will run the added Command-8 smoke test; both
+results are tracked by the current follow-up PR.
 Intel and macOS versions earlier than Tahoe 26 remain outside the product
 support target.
 
