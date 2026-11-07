@@ -40,13 +40,18 @@ final class MenuBarPopoverUITests: XCTestCase {
         for section in sections {
             let sidebarButton = app.buttons["sidebar-section-\(section)"]
             for _ in 0..<12 {
-                if sidebarButton.exists && sidebarButton.isHittable {
+                let fullyVisible = sidebarButton.exists
+                    && sidebar.frame.insetBy(dx: 0, dy: 1).contains(sidebarButton.frame)
+                if fullyVisible && sidebarButton.isHittable {
                     break
                 }
                 sidebar.scroll(byDeltaX: 0, deltaY: -80)
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
-            if !sidebarButton.isHittable { print(app.debugDescription) }
+            XCTAssertTrue(
+                sidebar.frame.insetBy(dx: 0, dy: 1).contains(sidebarButton.frame),
+                "The \(section) sidebar button should be fully visible before clicking."
+            )
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
             sidebarButton.click()
 
@@ -71,5 +76,21 @@ final class MenuBarPopoverUITests: XCTestCase {
         XCTAssertTrue(title.isHittable, "The system monitor title should be visible in the opened panel.")
         XCTAssertTrue(app.staticTexts["CPU"].exists, "The panel should show a live CPU card instead of an empty strip.")
         XCTAssertTrue(app.staticTexts["Storage"].exists, "The panel should show storage information without scrolling.")
+    }
+
+    @MainActor
+    func testCommandEightOpensPrivacyPermissions() {
+        let app = XCUIApplication(bundleIdentifier: "com.manateek1.MacCleaner")
+        app.launchArguments += ["-MacCleaner.scanNoticeAcceptedVersion", "4"]
+        app.launch()
+
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 5), "The main window should be available for keyboard navigation.")
+        window.typeKey("8", modifierFlags: .command)
+
+        let content = app.descendants(matching: .any)
+            .matching(identifier: "section-content-permissions")
+            .firstMatch
+        XCTAssertTrue(content.waitForExistence(timeout: 5), "Command-8 should open Privacy & Permissions.")
     }
 }

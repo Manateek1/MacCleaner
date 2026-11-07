@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.7 - 2026-11-07
+
+- Add a setting to stop saving new local activity summaries and a separate,
+  confirmed action to clear existing history without clearing saved scans.
+- Add a tested Apple silicon developer-preview workflow for macOS Tahoe 26+.
+  The preview is ad-hoc signed and is not notarized.
+
+## 0.5.6 - 2026-11-04
+
+- Filter saved Smart Scan findings to the selected review tool, clear selection
+  when switching tools, and refresh scoped counts after cleanup.
+- Limit duplicate-keeper selection to the accessible copies shown for review.
+
+## 0.5.5 - 2026-11-03
+
+- Keep App Updater content within small windows and lower the minimum window
+  height to fit on displays above the Dock.
+
 ## 0.5.4 - 2026-11-02
 
 - Include current-account Library metadata in whole-Mac scans so file sizes,

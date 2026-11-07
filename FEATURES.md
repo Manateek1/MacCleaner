@@ -547,9 +547,11 @@ extensions, and browser messaging are outside the requested scope.
 
 ### Phase 5: broader QA and distribution
 
-- Independent feature-level accessibility and keyboard-navigation review,
-  broader light/dark and resizing coverage, and live large-tree/performance
-  runs on Tahoe 26+ Apple silicon remain future QA.
+- Hosted UI checks navigate all 22 primary sidebar sections, verify the
+  menu-bar monitor is visible, and test the Command-8 keyboard shortcut.
+  VoiceOver and keyboard-only selection/cleanup, broader light/dark and
+  resizing coverage, and live large-tree/performance runs on physical
+  Tahoe-and-later Macs remain future QA.
 - The developer-preview workflow builds and tests an arm64 app on macOS 26,
   ad-hoc signs the app bundle, and publishes a checksum-verified GitHub
   prerelease without Apple credentials. The app is not Developer ID signed or
