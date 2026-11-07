@@ -738,6 +738,52 @@ final class FileScannerTests: XCTestCase {
         }
     }
 
+    func testRejectsNonLocalFolderScanRoots() async throws {
+        let root = try temporaryFolder()
+        try Data("sample".utf8).write(to: root.appendingPathComponent("sample.txt"))
+        let request = ScanRequest(root: root, kind: .largeAndOld, minimumFileSizeBytes: 1, oldFileAgeDays: 365)
+
+        do {
+            _ = try await FileScanner(localVolumeCheck: { _ in false }).scan(request) { _ in }
+            XCTFail("A nonlocal scan root should be rejected")
+        } catch let error as ScanError {
+            XCTAssertEqual(error, .nonLocalVolume)
+        }
+    }
+
+    func testSkipsNonLocalMountNestedInsideLocalFolder() async throws {
+        let root = try temporaryFolder()
+        let networkMount = root.appendingPathComponent("mounted-share", isDirectory: true)
+        try FileManager.default.createDirectory(at: networkMount, withIntermediateDirectories: true)
+        try Data("local file".utf8).write(to: root.appendingPathComponent("local.dat"))
+        try Data("remote file".utf8).write(to: networkMount.appendingPathComponent("remote.dat"))
+        let networkPath = networkMount.path
+        let scanner = FileScanner(
+            localVolumeCheck: { !$0.path.hasPrefix(networkPath) },
+            deviceIdentifierProvider: { path in
+                path == networkPath || path.hasPrefix(networkPath + "/") ? 2 : 1
+            }
+        )
+        let request = ScanRequest(root: root, kind: .largeAndOld, minimumFileSizeBytes: 1, oldFileAgeDays: 365)
+
+        let result = try await scanner.scan(request) { _ in }
+
+        XCTAssertEqual(result.items.map(\.name), ["local.dat"])
+        XCTAssertTrue(result.skippedLocations.contains(networkPath))
+    }
+
+    func testCleanupRevalidationRejectsFilesOnANonLocalVolume() async throws {
+        let folder = try temporaryFolder()
+        try Data("candidate".utf8).write(to: folder.appendingPathComponent("candidate.bin"))
+        let result = try await scan(folder, kind: .largeAndOld, minimumSize: 1)
+        let item = try XCTUnwrap(result.items.first)
+
+        guard case .protected(let message) = SafeFilePolicy.assess(item, inside: folder, localVolumeCheck: { _ in false }) else {
+            return XCTFail("Files on nonlocal volumes must be blocked from cleanup")
+        }
+        XCTAssertTrue(message.contains("network volumes"))
+    }
+
     func testDuplicateSpaceEstimateExcludesOneSuggestedCopy() async throws {
         let folder = try temporaryFolder()
         for name in ["first.bin", "second.bin", "third.bin"] {

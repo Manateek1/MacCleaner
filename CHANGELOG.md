@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.8 - 2026-11-07
+
+- Keep folder scans local by rejecting network-volume roots and skipping
+  nonlocal mounts encountered inside local folders; cleanup rechecks locality.
+- Make the Full Disk Access status check refuse symbolic-link folders.
+- Show every selected file name and full path in a review sheet before Trash,
+  and limit bulk selection to rows visible on the current page.
+
 ## 0.5.7 - 2026-11-07
 
 - Add a setting to stop saving new local activity summaries and a separate,

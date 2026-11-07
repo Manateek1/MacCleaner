@@ -19,7 +19,7 @@ enum FullDiskAccessProbe {
     static func canOpenDirectory(
         _ path: String,
         openDirectory: @Sendable (String) -> Bool = { path in
-            let descriptor = path.withCString { Darwin.open($0, O_RDONLY | O_DIRECTORY | O_CLOEXEC) }
+            let descriptor = path.withCString { Darwin.open($0, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW) }
             guard descriptor >= 0 else { return false }
             _ = Darwin.close(descriptor)
             return true

@@ -38,6 +38,8 @@ download.
   not downloaded, and content-based checks skip iCloud items. Other iCloud
   Drive areas, network volumes, and protected system folders are skipped, with
   visible folder and file progress. Specific-folder scans remain available.
+  Those specific scans also reject a network-volume root and skip nested
+  nonlocal mounts; network-backed files cannot be sent to Trash.
   The latest full-disk
   findings are saved locally with names and paths so a review survives restart;
   Settings can clear that saved review.
