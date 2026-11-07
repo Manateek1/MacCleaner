@@ -43,7 +43,7 @@ final class MenuBarPopoverUITests: XCTestCase {
                 if sidebarButton.exists && sidebarButton.isHittable {
                     break
                 }
-                sidebar.scroll(byDeltaX: 0, deltaY: 80)
+                sidebar.scroll(byDeltaX: 0, deltaY: -80)
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
             if !sidebarButton.isHittable { print(app.debugDescription) }
