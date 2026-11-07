@@ -40,13 +40,18 @@ final class MenuBarPopoverUITests: XCTestCase {
         for section in sections {
             let sidebarButton = app.buttons["sidebar-section-\(section)"]
             for _ in 0..<12 {
-                if sidebarButton.exists && sidebarButton.isHittable {
+                let fullyVisible = sidebarButton.exists
+                    && sidebar.frame.insetBy(dx: 0, dy: 1).contains(sidebarButton.frame)
+                if fullyVisible && sidebarButton.isHittable {
                     break
                 }
                 sidebar.scroll(byDeltaX: 0, deltaY: -80)
             }
             XCTAssertTrue(sidebarButton.exists, "The \(section) sidebar button should exist.")
-            if !sidebarButton.isHittable { print(app.debugDescription) }
+            XCTAssertTrue(
+                sidebar.frame.insetBy(dx: 0, dy: 1).contains(sidebarButton.frame),
+                "The \(section) sidebar button should be fully visible before clicking."
+            )
             XCTAssertTrue(sidebarButton.isHittable, "The \(section) sidebar button should be reachable by scrolling.")
             sidebarButton.click()
 

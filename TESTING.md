@@ -11,10 +11,10 @@ Navigation tests verify that the nine numbered shortcuts are unique and map in
 order, and that the shared navigation model changes sections as expected.
 Hosted UI tests navigate through all 22 primary sidebar sections and verify
 that the menu-bar icon opens a visible System Monitor panel with CPU and storage
-cards. The current follow-up adds a keyboard smoke test for Command-8 navigation
-to Privacy & Permissions. The menu-bar panel layout test also measures the
-hosted SwiftUI view and guards against a collapsed, one-line window by
-requiring its intended minimum size.
+cards. They also verify Command-8 navigation to Privacy & Permissions and scroll
+sidebar rows fully into view before clicking them. The menu-bar panel layout
+test also measures the hosted SwiftUI view and guards against a collapsed,
+one-line window by requiring its intended minimum size.
 
 Run with:
 
@@ -141,11 +141,11 @@ On Nov 7, 2026, Mac Cleaner 0.5.7 build 110 passed the GitHub macOS 26 release
 gate (run 42411613124): 329 unit tests, both hosted UI tests, all 23 standalone
 core checks (including the 10,000-file stress scan), and Xcode static analysis.
 The UI suite reached all 22 sidebar sections and confirmed the menu-bar panel
-shows its title, CPU card, and storage card. GitHub Actions is also validating
-the same suite on macOS 27 and will run the added Command-8 smoke test; both
-results are tracked by the current follow-up PR.
+shows its title, CPU card, and storage card.
 Intel and macOS versions earlier than Tahoe 26 remain outside the product
-support target.
+support target. The current hosted suite also checks Command-8 navigation and
+runs on both the Tahoe 26 stable runner and the macOS 27 preview runner; see
+compatibility PR #4 for its results.
 
 ## Manual checks performed
 
