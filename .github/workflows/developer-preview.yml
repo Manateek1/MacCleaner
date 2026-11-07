@@ -219,6 +219,7 @@ jobs:
           gh release create "$RELEASE_TAG" \
             "$RELEASE_DIR/$ARCHIVE_NAME" \
             "$RELEASE_DIR/$ARCHIVE_NAME.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
             --target "$TESTED_COMMIT" \
             --title "Mac Cleaner ${RELEASE_VERSION} Preview (ad-hoc signed)" \
             --prerelease \
@@ -235,7 +236,7 @@ jobs:
             exit 1
           fi
 
-          IS_PRERELEASE=$(gh release view "$RELEASE_TAG" --json isPrerelease --jq '.isPrerelease')
+          IS_PRERELEASE=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq '.isPrerelease')
           if [[ "$IS_PRERELEASE" != "true" ]]; then
             echo "The GitHub release was not marked as a prerelease." >&2
             exit 1
