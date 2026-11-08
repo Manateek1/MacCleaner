@@ -24,6 +24,11 @@ Package.resolved
 *.p12
 *.cer
 *.key
+!.codex/
+.codex/*
+!.codex/environments/
+.codex/environments/*
+!.codex/environments/environment.toml
 
 # Generated app bundles and logs
 dist/

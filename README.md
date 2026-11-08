@@ -19,7 +19,7 @@ download.
 - Native SwiftUI macOS app with Overview, Smart Scan, Large & Old Files,
   Downloads, Exact Duplicates, Similar Photos, System Junk, AI Clutter, Space Lens,
   Local AI Models, Privacy Cleanup, Performance, Applications, App Updater, App
-  Security, App Leftovers, Startup & Background, Trash, My Tools, Privacy &
+  Security, Malware Scan, App Leftovers, Startup & Background, Trash, My Tools, Privacy &
   Permissions, Activity, Xcode Storage, Diagnostic Reports, and Settings.
 - Light, blue-accented dashboard with a custom Mac Cleaner app icon and
   direct sidebar navigation.
@@ -72,6 +72,12 @@ download.
   registration status for another app's bundled helper is unavailable. An
   optional code trust check may contact Apple for certificate revocation and
   notarization. These checks provide context; they do not detect malware.
+- Malware Scan can use a separately installed ClamAV scanner. It checks only
+  files Mac Cleaner has already inventoried as local, skips cloud-only items,
+  and shows the file and signature behind each alert. ClamAV definitions are
+  downloaded only when you ask. Mac Cleaner never quarantines or deletes an
+  alert, and a clean result is not a guarantee that a Mac is malware-free.
+  ClamAV is optional; the rest of Mac Cleaner works without it.
 - App Updater can show when an app's numeric build changes after a supported
   feed check. It can also check Homebrew cask app versions using the metadata
   currently available to Homebrew and copy an update command for review. It

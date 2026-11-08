@@ -21,6 +21,7 @@ enum AppSection: String, CaseIterable, Hashable, Identifiable {
     case applications
     case appUpdates
     case appSecurity
+    case malwareScan
     case appLeftovers
     case startup
     case deviceBackups
@@ -53,6 +54,7 @@ enum AppSection: String, CaseIterable, Hashable, Identifiable {
         case .applications: "Applications"
         case .appUpdates: "App Updater"
         case .appSecurity: "App Security"
+        case .malwareScan: "Malware Scan"
         case .appLeftovers: "App Leftovers"
         case .startup: "Startup & Background"
         case .deviceBackups: "Device Backups"
@@ -85,6 +87,7 @@ enum AppSection: String, CaseIterable, Hashable, Identifiable {
         case .applications: "square.stack.3d.up"
         case .appUpdates: "arrow.down.app"
         case .appSecurity: "checkmark.shield"
+        case .malwareScan: "shield.lefthalf.filled"
         case .appLeftovers: "folder.badge.questionmark"
         case .startup: "power"
         case .deviceBackups: "iphone.and.arrow.left.and.arrow.right"
@@ -125,7 +128,7 @@ enum AppSection: String, CaseIterable, Hashable, Identifiable {
         case .duplicates: .duplicates
         case .junk: .junk
         case .aiClutter: .aiClutter
-        case .overview, .downloads, .trash, .localModels, .privacyCleanup, .similarPhotos, .spaceLens, .performance, .maintenance, .applications, .appUpdates, .appSecurity, .appLeftovers, .startup, .deviceBackups, .xcodeStorage, .diagnosticReports, .screenCleaning, .tools, .permissions, .activity, .settings: nil
+        case .overview, .downloads, .trash, .localModels, .privacyCleanup, .similarPhotos, .spaceLens, .performance, .maintenance, .applications, .appUpdates, .appSecurity, .malwareScan, .appLeftovers, .startup, .deviceBackups, .xcodeStorage, .diagnosticReports, .screenCleaning, .tools, .permissions, .activity, .settings: nil
         }
     }
 }
@@ -160,6 +163,7 @@ struct RootView: View {
                     sidebarRow(.applications)
                     sidebarRow(.appUpdates)
                     sidebarRow(.appSecurity)
+                    sidebarRow(.malwareScan)
                     sidebarRow(.appLeftovers)
                     sidebarRow(.startup)
                 }
@@ -218,6 +222,8 @@ struct RootView: View {
                     ApplicationUpdaterView(model: model)
                 case .appSecurity:
                     ApplicationSecurityView(model: model)
+                case .malwareScan:
+                    MalwareScanView(model: model)
                 case .appLeftovers:
                     ApplicationLeftoversView(model: model)
                 case .startup:

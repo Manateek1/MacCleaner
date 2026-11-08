@@ -327,7 +327,7 @@ struct FileScanner: ScanServicing {
                 }
                 guard SafeFilePolicy.isInside(directory.path, root: root.path) || directory.standardizedFileURL.path == root.path,
                       isDirectory(directory.path),
-                      !isPackageDirectory(directory),
+                      (request.inventoryOnly || !isPackageDirectory(directory)),
                       !(diskScan && otherAccountLibraryPaths.contains(directory.standardizedFileURL.path)),
                       !SafeFilePolicy.shouldSkipDirectory(directory.path, homeDirectory: accountHome) else {
                     continue
@@ -362,12 +362,16 @@ struct FileScanner: ScanServicing {
                         directoryOpeners: directoryOpeners,
                         localVolumeCheck: localVolumeCheck,
                         deviceIdentifierProvider: deviceIdentifierProvider,
+                        includePackageContents: request.inventoryOnly,
                         baseFileCount: records.count,
                         baseBytes: bytes,
                         baseEntries: entriesVisited,
                         progress: progress
                     )
                     records.append(contentsOf: cloudScan.records)
+                    if request.inventoryOnly {
+                        cloudScan.records.forEach { request.onFileDiscovered?($0.path) }
+                    }
                     bytes += cloudScan.bytesVisited
                     entriesVisited += cloudScan.entriesVisited
                     skipped += cloudScan.skippedItems
@@ -442,7 +446,7 @@ struct FileScanner: ScanServicing {
                     entriesVisited += 1
                     if isSymbolicLink(item.path) { continue }
                     if isDirectory(item.path) {
-                        if isPackageDirectory(item) || SafeFilePolicy.shouldSkipDirectory(item.path, homeDirectory: accountHome) { continue }
+                        if (!request.inventoryOnly && isPackageDirectory(item)) || SafeFilePolicy.shouldSkipDirectory(item.path, homeDirectory: accountHome) { continue }
                         if diskScan && otherAccountLibraryPaths.contains(item.standardizedFileURL.path) { continue }
                         pendingDirectories.append(item)
                     } else {
@@ -454,6 +458,7 @@ struct FileScanner: ScanServicing {
                             break
                         }
                         records.append(FileRecord(path: item.path, identity: metadata.identity, lastAccessedAt: metadata.lastAccessedAt, isCloudManaged: false))
+                        if request.inventoryOnly { request.onFileDiscovered?(item.path) }
                         bytes += metadata.identity.size
                     }
                     if entriesVisited.isMultiple(of: 64) {
@@ -485,7 +490,7 @@ struct FileScanner: ScanServicing {
 
         try Task.checkCancellation()
         let duplicateMap: [String: (groupID: String, count: Int, keepPath: String)]
-        if request.kind == .duplicates || request.kind == .smart {
+        if !request.inventoryOnly && (request.kind == .duplicates || request.kind == .smart) {
             progress(ScanProgress(stage: "Checking exact duplicates", filesVisited: records.count, bytesVisited: bytes))
             duplicateMap = try Self.exactDuplicates(
                 in: records.filter { !$0.isCloudManaged },
@@ -500,7 +505,7 @@ struct FileScanner: ScanServicing {
 
         let now = Date()
         let oldCutoff = now.addingTimeInterval(-Double(request.oldFileAgeDays) * 24 * 60 * 60)
-        let items = records.compactMap { record -> ScanItem? in
+        let items = request.inventoryOnly ? [] : records.compactMap { record -> ScanItem? in
             let url = URL(fileURLWithPath: record.path)
             let categories = categoriesFor(
                 path: record.path,
@@ -550,7 +555,7 @@ struct FileScanner: ScanServicing {
         }
 
         progress(ScanProgress(stage: "Preparing space view", filesVisited: records.count, bytesVisited: bytes, entriesVisited: entriesVisited))
-        let space = try makeSpaceSnapshot(records: records, root: root)
+        let space = request.inventoryOnly ? nil : try makeSpaceSnapshot(records: records, root: root)
         progress(ScanProgress(stage: "Organizing findings", filesVisited: records.count, bytesVisited: bytes, entriesVisited: entriesVisited))
         let sortedItems = items.sorted { lhs, rhs in
             if lhs.size != rhs.size { return lhs.size > rhs.size }
@@ -587,6 +592,7 @@ struct FileScanner: ScanServicing {
         directoryOpeners: ScanDirectoryOpeners,
         localVolumeCheck: @Sendable (URL) -> Bool,
         deviceIdentifierProvider: @Sendable (String) -> UInt64?,
+        includePackageContents: Bool,
         baseFileCount: Int,
         baseBytes: Int64,
         baseEntries: Int,
@@ -622,7 +628,7 @@ struct FileScanner: ScanServicing {
                 }
                 continue
             }
-            guard !isPackageDirectory(currentDirectory),
+            guard (includePackageContents || !isPackageDirectory(currentDirectory)),
                   !SafeFilePolicy.shouldSkipDirectory(currentPath, homeDirectory: accountHome) else { continue }
             guard let currentDevice = deviceIdentifierProvider(currentPath) else {
                 result.skippedItems += 1

@@ -156,6 +156,7 @@ struct MyToolsView: View {
         MyTool(section: .applications, summary: "Review installed apps and prepare a confirmed removal."),
         MyTool(section: .appUpdates, summary: "Check supported update feeds and open the app's own updater."),
         MyTool(section: .appSecurity, summary: "Verify installed app signatures, sealed files, and embedded code."),
+        MyTool(section: .malwareScan, summary: "Run an optional ClamAV scan of local files and review alerts."),
         MyTool(section: .appLeftovers, summary: "Review exact app-data matches left in common locations."),
         MyTool(section: .startup, summary: "See readable login and background launch items."),
         MyTool(section: .deviceBackups, summary: "Review local iPhone and iPad backups by size and file-change date."),

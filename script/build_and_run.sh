@@ -27,6 +27,25 @@ if [[ ! -d "$PROJECT" ]]; then
   exit 1
 fi
 
+close_existing_app() {
+  if ! /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1; then
+    return
+  fi
+
+  /usr/bin/osascript -e 'tell application id "com.manateek1.MacCleaner" to quit' >/dev/null 2>&1 || true
+  for _ in {1..10}; do
+    if ! /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1; then
+      return
+    fi
+    sleep 1
+  done
+
+  echo "$APP_NAME did not close. Stopping so the new build will not open beside it." >&2
+  exit 1
+}
+
+close_existing_app
+
 if [[ "$USE_SWIFTPM" == "1" ]]; then
   swift build
   BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"

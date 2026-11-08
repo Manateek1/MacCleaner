@@ -545,6 +545,8 @@ struct ScanRequest: Sendable {
     let scanEntireDisk: Bool
     let excludedPaths: Set<String>
     let duplicateKeepPreference: DuplicateKeepPreference
+    let inventoryOnly: Bool
+    let onFileDiscovered: (@Sendable (String) -> Void)?
 
     init(
         root: URL,
@@ -553,7 +555,9 @@ struct ScanRequest: Sendable {
         oldFileAgeDays: Int,
         scanEntireDisk: Bool = false,
         excludedPaths: Set<String> = [],
-        duplicateKeepPreference: DuplicateKeepPreference = .oldest
+        duplicateKeepPreference: DuplicateKeepPreference = .oldest,
+        inventoryOnly: Bool = false,
+        onFileDiscovered: (@Sendable (String) -> Void)? = nil
     ) {
         self.root = root
         self.kind = kind
@@ -562,6 +566,8 @@ struct ScanRequest: Sendable {
         self.scanEntireDisk = scanEntireDisk
         self.excludedPaths = excludedPaths
         self.duplicateKeepPreference = duplicateKeepPreference
+        self.inventoryOnly = inventoryOnly
+        self.onFileDiscovered = onFileDiscovered
     }
 }
 

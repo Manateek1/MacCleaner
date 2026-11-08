@@ -1,6 +1,6 @@
 # Feature status
 
-Mac Cleaner 0.5.8 build 111 builds on the first usable local-only beta
+Mac Cleaner 0.5.9 build 112 builds on the first usable local-only beta
 (0.4.0). The features below run in the app; they are not navigation placeholders. The suite
 covers whole-Mac file review, conservative cleanup tools, local app and health
 inventories, and review-first moves to Trash. Remaining platform boundaries and
@@ -150,6 +150,14 @@ extensions, and browser messaging are outside the requested scope.
   location signal is context, not a malware finding.
   That optional check may contact Apple's certificate and notarization services.
   It does not change files or call an app malicious.
+- Malware Scan optionally uses a separately installed ClamAV command-line
+  scanner. It builds a private, temporary list from Mac Cleaner's read-only
+  local-file inventory, including local iCloud Desktop files while skipping
+  cloud-only files. Users download malware definitions only when they request
+  an update; ClamAV checks those local files and reports signatures and paths
+  for review. Mac Cleaner never quarantines or deletes alerts. This is not
+  real-time protection, and a clean result cannot guarantee that every threat
+  was found. ClamAV is not installed automatically or bundled with the app.
 - App Leftovers checks exact bundle-ID names and a small, fixed set of familiar
   suffix variants in the current user's Application
   Support, Caches, Preferences, Containers, Logs, Saved Application State, and
@@ -500,9 +508,10 @@ extensions, and browser messaging are outside the requested scope.
   launch-daemon folders, and management where supported.
 - Other independently verifiable update sources beyond Sparkle, Homebrew,
   App Store handoff, and native updater routing still need individual review.
-- Validated malware scanning options and conservative findings. Code signature
-  and certificate trust checks are available per app; the audit still does not
-  detect malware.
+- No independent heuristic scanner, real-time monitoring, or automatic
+  quarantine. The optional ClamAV integration requires the scanner to be
+  installed separately and uses ClamAV's signature database and file/archive
+  limits.
 - Safe maintenance actions for DNS and Spotlight if a supported, user-controlled
   approach can be implemented without a persistent privileged helper. Time
   Machine snapshots are view-only; thinning is not offered because this app does
@@ -529,7 +538,8 @@ extensions, and browser messaging are outside the requested scope.
 - App Updater already performs user-started HTTPS checks for version metadata;
   it does not download or install app updates. A user-started code trust check
   may contact Apple's certificate and notarization services. Scan data and
-  results stay local. Malware-definition downloads are not included.
+  results stay local. Malware-definition downloads are user-started and stored
+  in Mac Cleaner's local application-support folder.
 
 ### Future local security and privacy work
 
@@ -537,9 +547,8 @@ extensions, and browser messaging are outside the requested scope.
   other supported macOS activity records. App Security now checks a limited
   set of user and shared launch definitions; broader modern background-item
   visibility and management remain unfinished.
-- Research reputable malware-scanning options, license compatibility,
-  signature verification, and conservative heuristic detections. Do not claim
-  antivirus coverage without a validated engine.
+- Evaluate additional malware heuristics only if they can be tested and
+  explained without presenting guesses as confirmed malware.
 - Provider-specific model deletion remains omitted where it would bypass the
   current review-and-Trash safeguards or require an unsupported destructive API.
 - Evaluate Endpoint Security and other platform restrictions before adding any
@@ -547,7 +556,7 @@ extensions, and browser messaging are outside the requested scope.
 
 ### Phase 5: broader QA and distribution
 
-- Hosted UI checks navigate all 22 primary sidebar sections, verify the
+- Hosted UI checks navigate all 23 primary sidebar sections, verify the
   menu-bar monitor is visible, and test the Command-8 keyboard shortcut.
   VoiceOver and keyboard-only selection/cleanup, broader light/dark and
   resizing coverage, and live large-tree/performance runs on physical
