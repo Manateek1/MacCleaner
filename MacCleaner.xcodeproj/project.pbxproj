@@ -13,10 +13,12 @@
 		060DBA22AF498A018E8B3F3D /* ProcessActivitySampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AEDB33F8FB0C152EFCB6467 /* ProcessActivitySampler.swift */; };
 		06A78F63CA10BCC08FF785EB /* BrowserPrivacyCleanupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DAE02493DB860E871EB9035 /* BrowserPrivacyCleanupView.swift */; };
 		0828E1BA89F3D2C7209E9E2E /* FullDiskAccessProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D149D4F92EECB4C9317DD3 /* FullDiskAccessProbeTests.swift */; };
+		0ADDB99062C6D9C5B2FA5051 /* MalwareScanServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 098081E72F824DCE7E11A8FA /* MalwareScanServiceTests.swift */; };
 		0B53C3B432A9C6FFD2F8DC10 /* ScanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED435EE3207F05C1B3CCD4 /* ScanViewModel.swift */; };
 		0F9516D46CFE663FE07C1081 /* ApplicationRemovalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62264E0530261689A98907D8 /* ApplicationRemovalTests.swift */; };
 		1CAA506C29CAE8939D806106 /* LocalTimeMachineSnapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB113A45041B8EF89E65AF1E /* LocalTimeMachineSnapshots.swift */; };
 		1D2D355E949EDC3390234A8D /* MacCleanerAppearancePreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B9D5685617D92D23C0F28F /* MacCleanerAppearancePreferenceTests.swift */; };
+		1F7BE0718A50FEAC119B7253 /* MalwareScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E69F54D7E9ECA64EB0D757A9 /* MalwareScanView.swift */; };
 		205C4D676E591401A111A5A4 /* SafeFilePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA5E8C68F9DC2DFE617062C /* SafeFilePolicy.swift */; };
 		226BF1AC1020704875471DBE /* ICloudDesktopPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2373D0C052D42647670B8853 /* ICloudDesktopPolicyTests.swift */; };
 		23E81C83659A1B0D9F1772B7 /* FileScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5085BA35D5998F48DE636EC /* FileScanner.swift */; };
@@ -48,6 +50,7 @@
 		61179FE2E697735A763CF73D /* DeviceBackupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7EE27AA7A8A5A5ABD0D7413 /* DeviceBackupsView.swift */; };
 		638A7E97CBD6A57B47281FD0 /* LocalDiskHealthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A3FA3AAFB2633528D655FA /* LocalDiskHealthServiceTests.swift */; };
 		646109F8EA2CDE52F452B943 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FEAC324F1B712805F2B85B3A /* Assets.xcassets */; };
+		662FA03797787BB0E5C06FC4 /* MalwareScanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52141660F652CC5428428DA3 /* MalwareScanService.swift */; };
 		67035E2AB6C6A4146FA56019 /* BrowserPrivacyCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2A2B936A278031D89B565A /* BrowserPrivacyCleanupService.swift */; };
 		671B0524062B3CF8C4A1034D /* LocalProtectionStatusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0C8AC501C39EC4564111A7 /* LocalProtectionStatusService.swift */; };
 		69523029C454FE707C0B0540 /* PrivacyPermissionReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7172672F2A1B51AC0D4FCD99 /* PrivacyPermissionReaderTests.swift */; };
@@ -150,6 +153,7 @@
 		007DF1089FA011D2E50C29F8 /* LocalAIModelInventory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIModelInventory.swift; sourceTree = "<group>"; };
 		0649FCC0D027045298E76BDB /* ScanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanModels.swift; sourceTree = "<group>"; };
 		07FA58A05C134DFC8A063D83 /* ScreenCleaningSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCleaningSession.swift; sourceTree = "<group>"; };
+		098081E72F824DCE7E11A8FA /* MalwareScanServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MalwareScanServiceTests.swift; sourceTree = "<group>"; };
 		0B5628D354985A15898BC6AE /* MacCleanerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCleanerApp.swift; sourceTree = "<group>"; };
 		0B72EE5DF56A55B3E4A3F88B /* BrowserPrivacyCleanupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPrivacyCleanupServiceTests.swift; sourceTree = "<group>"; };
 		0D2A2B936A278031D89B565A /* BrowserPrivacyCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPrivacyCleanupService.swift; sourceTree = "<group>"; };
@@ -187,6 +191,7 @@
 		498AB93A7A9A3BC0F6993890 /* XcodeArchiveInventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeArchiveInventoryView.swift; sourceTree = "<group>"; };
 		49CCDC87AB6E3BBF6145D442 /* SimilarPhotosPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotosPreference.swift; sourceTree = "<group>"; };
 		4BB2D0A9E4E6B9E546CAC85A /* DiagnosticsExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsExport.swift; sourceTree = "<group>"; };
+		52141660F652CC5428428DA3 /* MalwareScanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MalwareScanService.swift; sourceTree = "<group>"; };
 		53B8A40648A3BDCD227E5295 /* MacHealthMaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacHealthMaintenanceView.swift; sourceTree = "<group>"; };
 		557834B84D978FC3B1106021 /* HomebrewCaskUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomebrewCaskUpdateService.swift; sourceTree = "<group>"; };
 		592EE01DDA59787B3B85E2F6 /* SafeFileAccessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeFileAccessTests.swift; sourceTree = "<group>"; };
@@ -254,6 +259,7 @@
 		DED7A04B83A763178366E870 /* SettingsPreferenceResetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPreferenceResetTests.swift; sourceTree = "<group>"; };
 		DF48156085FF061F7D03EDF5 /* MacCleanerAppearancePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCleanerAppearancePreference.swift; sourceTree = "<group>"; };
 		E0B58149AF150038F9B25493 /* DiagnosticReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticReportsView.swift; sourceTree = "<group>"; };
+		E69F54D7E9ECA64EB0D757A9 /* MalwareScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MalwareScanView.swift; sourceTree = "<group>"; };
 		E9973DF07A96DC732EC63D43 /* PrivacyPermissionReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPermissionReader.swift; sourceTree = "<group>"; };
 		EB113A45041B8EF89E65AF1E /* LocalTimeMachineSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTimeMachineSnapshots.swift; sourceTree = "<group>"; };
 		EC163EC6DAF042B2A36D8024 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -303,6 +309,7 @@
 				A7C6D7FEBBF58CDF3F145F70 /* LocalAIModelsView.swift */,
 				47811967A9AF3E00EAE37F4B /* MacCleanerTheme.swift */,
 				53B8A40648A3BDCD227E5295 /* MacHealthMaintenanceView.swift */,
+				E69F54D7E9ECA64EB0D757A9 /* MalwareScanView.swift */,
 				7A29BACD2544821941060832 /* MyToolsView.swift */,
 				5D700A6D1E9B790800F8DE7E /* PerformanceView.swift */,
 				B4C049EC0025CA4FC60EF50C /* PermissionsView.swift */,
@@ -355,6 +362,7 @@
 				AC29DBAD58AA762813312413 /* LocalProtectionStatusTests.swift */,
 				6F25C133212F13B2BF3B736C /* LocalTimeMachineSnapshotsTests.swift */,
 				10B9D5685617D92D23C0F28F /* MacCleanerAppearancePreferenceTests.swift */,
+				098081E72F824DCE7E11A8FA /* MalwareScanServiceTests.swift */,
 				CDB634EDD3F6E87394051FA1 /* MyToolsFavoritesTests.swift */,
 				F316939BB37173196F5DFDE9 /* PerformanceMenuLayoutTests.swift */,
 				1ED566B87A54887837271D36 /* PhotoLibraryScanTests.swift */,
@@ -429,6 +437,7 @@
 				BA5E48D6EF8CE02640C2EB10 /* LocalMacOSUpdateService.swift */,
 				3E0C8AC501C39EC4564111A7 /* LocalProtectionStatusService.swift */,
 				EB113A45041B8EF89E65AF1E /* LocalTimeMachineSnapshots.swift */,
+				52141660F652CC5428428DA3 /* MalwareScanService.swift */,
 				A4E522B136770A0E73F44199 /* PhotoLibraryScanner.swift */,
 				E9973DF07A96DC732EC63D43 /* PrivacyPermissionReader.swift */,
 				3AEDB33F8FB0C152EFCB6467 /* ProcessActivitySampler.swift */,
@@ -617,6 +626,7 @@
 				B6529C36678679B01FEFFBE9 /* LocalProtectionStatusTests.swift in Sources */,
 				C7282810D8DF506AA6022B8A /* LocalTimeMachineSnapshotsTests.swift in Sources */,
 				1D2D355E949EDC3390234A8D /* MacCleanerAppearancePreferenceTests.swift in Sources */,
+				0ADDB99062C6D9C5B2FA5051 /* MalwareScanServiceTests.swift in Sources */,
 				2549C31DCF1AE53BE5663948 /* MyToolsFavoritesTests.swift in Sources */,
 				89ECCAEE92F7B96A2B3EB357 /* PerformanceMenuLayoutTests.swift in Sources */,
 				8CC87757E63F644C732D7CDA /* PhotoLibraryScanTests.swift in Sources */,
@@ -681,6 +691,8 @@
 				4C08E9B0C013D2B949330563 /* MacCleanerAppearancePreference.swift in Sources */,
 				7473C166EABE31AF17EDEB29 /* MacCleanerTheme.swift in Sources */,
 				E9EC854F8526DFC0118DFB5F /* MacHealthMaintenanceView.swift in Sources */,
+				662FA03797787BB0E5C06FC4 /* MalwareScanService.swift in Sources */,
+				1F7BE0718A50FEAC119B7253 /* MalwareScanView.swift in Sources */,
 				9B7D92E15AAF68EB8794D451 /* MyToolsView.swift in Sources */,
 				C5F9499A938F75F8ED69E785 /* PerformanceView.swift in Sources */,
 				3BF5E2B7352E5EE87E9A31A0 /* PermissionsView.swift in Sources */,
@@ -740,7 +752,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 111;
+				CURRENT_PROJECT_VERSION = 112;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Mac Cleaner";
@@ -754,7 +766,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.8;
+				MARKETING_VERSION = 0.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.manateek1.MacCleaner;
 				SDKROOT = macosx;
 			};
@@ -901,7 +913,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 111;
+				CURRENT_PROJECT_VERSION = 112;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Mac Cleaner";
@@ -915,7 +927,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.8;
+				MARKETING_VERSION = 0.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.manateek1.MacCleaner;
 				SDKROOT = macosx;
 			};
@@ -1088,7 +1100,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 111;
+				CURRENT_PROJECT_VERSION = 112;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1103,7 +1115,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.5.8;
+				MARKETING_VERSION = 0.5.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.manateek1.MacCleaner;
 				SDKROOT = macosx;
 			};

@@ -29,6 +29,7 @@ final class MenuBarPopoverUITests: XCTestCase {
             "applications",
             "appUpdates",
             "appSecurity",
+            "malwareScan",
             "appLeftovers",
             "startup",
             "tools",

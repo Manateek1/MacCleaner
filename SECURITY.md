@@ -103,12 +103,16 @@ savings. Scans are read-only; cleanup is a separate, reviewable action.
   selected bundled helpers. These checks provide context; they are not a
   malware verdict and do not inspect every modern background item or live
   process.
-- Mac Cleaner does not include an antivirus engine or claim malware
-  protection. ClamAV was evaluated: its one-time `clamscan` engine requires an
-  installed signature database, and ClamAV documents `freshclam` as the tool
-  for downloading and updating those signatures. The engine is GPLv2. Mac
-  Cleaner does not bundle an external engine or silently download definitions;
-  App Security remains a code-integrity review, not malware scanning.
+- Malware Scan optionally uses a separately installed ClamAV `clamscan`
+  executable over Mac Cleaner's read-only inventory of local files. It passes
+  file paths directly to the scanner, runs no shell or background daemon, and
+  never removes or quarantines alerts. ClamAV definitions are downloaded only
+  when the user requests an update and remain in Mac Cleaner's local
+  Application Support folder. Scan coverage can be partial because macOS may
+  protect folders, users may exclude locations, cloud-only files are skipped,
+  and the inventory has limits. A clean result is not proof that a Mac is free
+  of malware. ClamAV is not bundled; App Security remains a separate
+  code-integrity review.
   See the [ClamAV scan documentation](https://docs.clamav.net/manual/Usage/Scanning.html),
   [signature update documentation](https://docs.clamav.net/manual/Usage/SignatureManagement.html),
   and [license](https://github.com/Cisco-Talos/clamav/blob/main/COPYING.txt).
